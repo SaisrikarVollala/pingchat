@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "types": ["node","mongoose"]
-  }
+    "target": "ES2020",              // What JS version to compile to
+    "module": "CommonJS",            // Required for Node.js (can also be 'ESNext' for ESM)
+    "outDir": "./dist",              // Where to output the compiled .js files
+    "rootDir": "./src",              // Where your source files are
+    "strict": true,                  // Strict type checking
+    "esModuleInterop": true,         // Allow default imports from CJS modules
+    "skipLibCheck": true,            // Speed up compilation
+    "moduleResolution": "node",      // Resolve modules like Node.js does
+    "sourceMap": true                // Generate .js.map files (for debugging)
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }

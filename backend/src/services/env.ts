@@ -12,6 +12,8 @@ const envSchema = z.object({
     .transform((val) => parseInt(val, 10))
     .refine((val) => !isNaN(val), { message: 'PORT must be a valid number' })
     .default('3000'),
+  JWT_KEY:z.string(),
+  NODE_ENV:z.string()
 });
 
 

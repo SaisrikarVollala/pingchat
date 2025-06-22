@@ -1,12 +1,14 @@
 import express from 'express';
 import {env} from './services/env';
 import connectDB from './services/dbConnection';
+import cookieParser from 'cookie-parser';
 import userRouter from './routes/user.route';
 const app = express();
 const PORT=env.PORT;
 
 app.use(express.json());
-app.use("/user",userRouter);
+app.use(cookieParser());
+app.use("/api/user",userRouter);
 app.get('/', (req, res) => {
   res.send('Hello from TypeScript Express!');
 });

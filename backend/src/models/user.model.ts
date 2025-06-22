@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import {z} from 'zod';
-const userSchema = new mongoose.Schema(
+import { TUser } from "../services/validation";
+const userSchema = new mongoose.Schema<TUser>(
   {
     email: {
       type: String,
@@ -24,5 +24,5 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const User = mongoose.model("User", userSchema);
+const User =mongoose.model<TUser>("User", userSchema);
 export default User;
