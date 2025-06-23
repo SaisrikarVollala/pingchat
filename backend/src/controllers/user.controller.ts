@@ -1,11 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import User from "../models/user.model";
-import {TUser, userProfileShape, userShape} from "../services/validation";
+import {TUser, updateShape, userProfileShape, userShape} from "../services/validation.user";
 import bcrypt from 'bcrypt';
 import { generateToken } from "../services/auth";
 import {env} from "../services/env";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import cloudinary from "../services/cloudinaryConfig";
 
-export  const handleCreateUser=async(req: Request, res: Response,next:NextFunction)=>{
+export  const handleCreateUser=async(req: Request, res: Response)=>{
     try {
     const result = userShape.safeParse(req.body);
     
@@ -21,10 +23,10 @@ export  const handleCreateUser=async(req: Request, res: Response,next:NextFuncti
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-        res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Email already in use",
-      })
+      });
       return;
     }
     const salt=await bcrypt.genSalt(12);
@@ -38,13 +40,17 @@ export  const handleCreateUser=async(req: Request, res: Response,next:NextFuncti
     await newUser.save();
 
     
-    res.status(201).json({
+  res.status(201).json({
       success: true,
       message: "User registered successfully",
     });
 
   } catch (err) {
-    next(err)
+   res.status(500)
+   .json({
+    success:false,
+    message:"Internal server error"
+   })
   }
 };
 
@@ -53,7 +59,7 @@ export const handleLogin = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+)=> {
   try {
     const result = userProfileShape.safeParse(req.body);
 
@@ -107,9 +113,9 @@ export const handleLogin = async (
   }
 };
 
-export const handleLogout = (req: Request, res: Response) => {
+export const handleLogout = async(req: Request, res: Response) => {
   try {
-    res
+   res
     .clearCookie("jwt", { maxAge: 0 })
     .status(200)
     .json({
@@ -121,4 +127,25 @@ export const handleLogout = (req: Request, res: Response) => {
     console.log(error);
     res.status(500).json({sucess:false,message:"Internal server error"})
   }
+}
+
+export const handleupdateProfile=async(req:AuthenticatedRequest,res:Response)=>{
+      try {
+        const {profilePic}=updateShape.parse(req.body);
+        const user=req.userInfo;
+        const uploadProfile=await cloudinary.uploader.upload(profilePic);
+        const updatedUser=await User.findByIdAndUpdate(user?._id,{profilePic:uploadProfile.secure_url},{new:true})
+        res.json(updatedUser).status(200);
+      } catch (error) {
+        res.json({success:false}).status(500);
+      }
+}
+export const chekAuth=(req:AuthenticatedRequest,res:Response)=>{
+  try {
+    res.status(200).json(req.userInfo)
+  } catch (error) {
+    console.log("error in checking auth");
+    res.status(500).json("internal server error");
+  }
+
 }

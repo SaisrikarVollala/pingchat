@@ -1,3 +1,4 @@
+import { profile } from 'console';
 import {z} from 'zod';
 
 
@@ -16,5 +17,8 @@ export type TUser=z.infer<typeof userShape>;
 export const userProfileShape=z.object({
   email:z.string().email("Invalid Email"),
   password:z.string()
+})
+export const updateShape=z.object({
+  profilePic:z.string(),
 })
 export type TUserProfile=z.infer<typeof userProfileShape>

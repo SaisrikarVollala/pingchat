@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { TUser } from "../services/validation";
+import { TUser } from "../services/validation.user";
 const userSchema = new mongoose.Schema<TUser>(
   {
     email: {

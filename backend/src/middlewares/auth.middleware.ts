@@ -1,14 +1,65 @@
 import jwt from 'jsonwebtoken';
+import { customeJWTPayload } from '../services/auth';
 import User from '../models/user.model';
-import { Request,Response,NextFunction } from 'express';
-export const authenticateToken=(req:Request,res:Response,next:NextFunction)=>{
-    try {
-        const token=req.cookies.jwt;
-        if(!token){
-            
-        }
+import { Request, Response, NextFunction } from 'express';
+import { env } from '../services/env';
+import { TUser } from '../services/validation.user';
+import { Types } from 'mongoose';
 
-    } catch (error) {
-        
-    }
+type UserWithoutPassword = Omit<TUser, 'password'> &{_id:Types.ObjectId}
+
+export interface AuthenticatedRequest extends Request {
+  cookies: {
+    jwt?: string;
+  };
+  userInfo?: UserWithoutPassword;
 }
+
+export const authenticateToken = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+)=> {
+  try {
+    const token = req.cookies.jwt;
+    
+    if (!token) {
+       res.status(401).json({
+        success: false,
+        message: 'Unauthorized Access: No token provided'
+      });
+      return;
+    }
+
+    const decode = jwt.verify(token, env.JWT_KEY) as customeJWTPayload;
+    
+    const user = await User.findById(decode.userId).select('-password');
+    
+    if (!user) {
+       res.status(401).json({
+        success: false,
+        message: 'Unauthorized Access: User not found'
+      });
+      return;
+    }
+
+    req.userInfo = user;
+    next();
+    
+  } catch (error) {
+    console.error('Authentication error:', error);
+    
+    if (error instanceof jwt.JsonWebTokenError) {
+       res.status(401).json({
+        success: false,
+        message: 'Unauthorized Access: Invalid token'
+      })
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error during authentication'
+    });
+  }
+};
