@@ -3,10 +3,9 @@ import { customeJWTPayload } from '../services/auth';
 import User from '../models/user.model';
 import { Request, Response, NextFunction } from 'express';
 import { env } from '../services/env';
-import { TUser } from '../services/validation.user';
-import { Types } from 'mongoose';
+import { UserWithoutPassword } from '../services/validation.user';
 
-type UserWithoutPassword = Omit<TUser, 'password'> &{_id:Types.ObjectId}
+
 
 export interface AuthenticatedRequest extends Request {
   cookies: {
@@ -43,7 +42,7 @@ export const authenticateToken = async (
       return;
     }
 
-    req.userInfo = user;
+    req.userInfo  = user;
     next();
     
   } catch (error) {

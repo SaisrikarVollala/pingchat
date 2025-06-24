@@ -1,6 +1,5 @@
-import { profile } from 'console';
 import {z} from 'zod';
-
+import {Types} from 'mongoose';
 
 export const userShape = z.object({
     fullName: z.string().min(3, "Full name must be at least 3 characters").trim(),
@@ -18,7 +17,11 @@ export const userProfileShape=z.object({
   email:z.string().email("Invalid Email"),
   password:z.string()
 })
+export type TUserProfile=z.infer<typeof userProfileShape>
 export const updateShape=z.object({
   profilePic:z.string(),
 })
-export type TUserProfile=z.infer<typeof userProfileShape>
+
+export type UserWithoutPassword = Omit<TUser, 'password'> &{_id:Types.ObjectId}
+
+
