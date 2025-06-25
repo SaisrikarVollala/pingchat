@@ -9,6 +9,12 @@ export const userShape = z.object({
       .regex(/[0-9]/, "Password must contain at least one number"),
     profilePic:z.string().optional().default("")
   });
+export const userShapeWithOutPassword=z.object({
+  fullName:z.string(),
+  email:z.string().email(),
+  profilePic:z.string()
+})
+export type TUserWithOutPassword=z.infer<typeof userShapeWithOutPassword>
 export const loginShape = z.object({
     email: z.string().email("Invalid email format").trim(),
     password: z.string().min(8, "Password must be at least 8 characters").trim()

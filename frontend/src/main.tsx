@@ -8,6 +8,7 @@ import App from './App'
 import Home from './pages/Home'
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import UserProfile from './pages/UserProfile';
 
 const approuter = createBrowserRouter([
   {
@@ -28,7 +29,7 @@ const approuter = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { path: "/", element: <Home /> },
-          
+          { path: "/profile", element: <UserProfile /> },
         ],
       },
     ],

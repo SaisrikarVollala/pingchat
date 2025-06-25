@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import User from "../models/user.model";
-import {TUser, updateShape, userProfileShape, userShape} from "../services/validation.user";
+import {TUser, updateShape, userProfileShape, userShape, UserWithoutPassword} from "../services/validation.user";
 import bcrypt from 'bcrypt';
 import { generateToken } from "../services/auth";
 import {env} from "../services/env";
@@ -39,11 +39,15 @@ export  const handleCreateUser=async(req: Request, res: Response)=>{
     });
     await newUser.save();
 
-    
-  res.status(201).json({
-      success: true,
-      message: "User registered successfully",
+   const token = generateToken(newUser._id);
+
+    res.cookie('jwt', token, {
+      maxAge: 7 * 24 * 60 * 60 * 1000, 
+      httpOnly: true,
+      secure: env.NODE_ENV !== 'development',
     });
+    const userId:UserWithoutPassword=newUser
+    res.status(201).json(userId);
 
   } catch (err) {
    res.status(500)
@@ -101,13 +105,8 @@ export const handleLogin = async (
       httpOnly: true,
       secure: env.NODE_ENV !== 'development',
     });
-
-    res.status(200).json({
-      success: true,
-      message: 'Login successful',
-      user: { fullName: user.fullName, email: user.email },
-      token,
-    });
+    const userId:UserWithoutPassword=user
+    res.status(200).json(userId);
   } catch (error: unknown) {
     next(error); 
   }
@@ -140,6 +139,7 @@ export const handleupdateProfile=async(req:AuthenticatedRequest,res:Response)=>{
         res.json({success:false}).status(500);
       }
 }
+
 export const chekAuth=(req:AuthenticatedRequest,res:Response)=>{
   try {
     res.status(200).json(req.userInfo)
