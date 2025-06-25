@@ -6,28 +6,34 @@ import './index.css'
 import { RouterProvider,createBrowserRouter} from 'react-router-dom'
 import App from './App'
 import Home from './pages/Home'
-
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 
 const approuter = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <App />,
-    children:[
+    children: [
+     
       {
-        path:'user/signup',
-        element:<SignUp />
+        element: <PublicRoute />,
+        children: [
+          { path: "user/signup", element: <SignUp /> },
+          { path: "user/login", element: <Login /> },
+        ],
       },
-      {
-        path:'user/login',
-        element:<Login />
-      },{
-        path:'/',
-        element:<Home />, 
-      }
 
-    ]
+      
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: "/", element: <Home /> },
+          
+        ],
+      },
+    ],
   },
-])
+]);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

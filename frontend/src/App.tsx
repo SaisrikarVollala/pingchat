@@ -1,21 +1,16 @@
-import {useEffect } from "react"
-import { Navbar } from "./components/Navbar"
-import { Outlet } from "react-router-dom"
-import { useAuthStore } from "./store/useAuthStore"
 
+import Navbar from "./components/Navbar"
+import { Outlet } from "react-router-dom"
+
+import { Toaster } from "react-hot-toast"
 
 
 function App() {
-  const {checkAuth,authUser} = useAuthStore()
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-  console.log(authUser);
   return (
     <div>
       <Navbar />
-      <Outlet context={authUser} />
+      <Outlet  />
+      <Toaster />
     </div>
   )
 }

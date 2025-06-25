@@ -1,7 +1,12 @@
-import type { TformData } from "../validation";
+import { userShape, type TformData } from "../validation";
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, User } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail, User, MessagesSquare } from "lucide-react";
+import { Link } from "react-router-dom";
+import AuthImagePattern from "../components/AuthImagePattern";
+import { toast } from "react-hot-toast";
+
+
 
 const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -11,7 +16,28 @@ const SignUp = () => {
     password: '',
   });
   const {signUp, isSigningUp} = useAuthStore();
-  const handleSubmit=(e: React.FormEvent<HTMLFormElement>)=>{e.preventDefault();}
+ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  const validation = userShape.safeParse(formData);
+
+  if (!validation.success) {
+    const fieldErrors = validation.error.flatten().fieldErrors;
+    // setError(fieldErrors);
+
+    const firstError = Object.values(fieldErrors)[0]?.[0];
+    if (firstError) {
+      toast.error(firstError);
+    } else {
+      toast.error("Please fill out all required fields.");
+    }
+    return;
+  }
+
+
+  
+  signUp(validation.data);
+};
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
@@ -25,7 +51,7 @@ const SignUp = () => {
                 className="size-12 rounded-xl bg-primary/10 flex items-center justify-center 
               group-hover:bg-primary/20 transition-colors"
               >
-                <MessageSquare className="size-6 text-primary" />
+                <MessagesSquare className="size-6 text-primary" />
               </div>
               <h1 className="text-2xl font-bold mt-2">Create Account</h1>
               <p className="text-base-content/60">Get started with your free account</p>
@@ -110,23 +136,23 @@ const SignUp = () => {
             </button>
           </form>
 
-          {/* <div className="text-center">
+          <div className="text-center">
             <p className="text-base-content/60">
               Already have an account?{" "}
-              <Link to="/login" className="link link-primary">
-                Sign in
+              <Link to="/user/login" className="link link-primary">
+                Login
               </Link>
             </p>
-          </div> */}
+          </div>
         </div>
       </div>
 
       {/* right side */}
 
-      {/* <AuthImagePattern
-        title="Join our community"
+      <AuthImagePattern
+         title="Join our community"
         subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
-      /> */}
+      />
     </div>
   );
 }
