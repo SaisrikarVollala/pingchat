@@ -21,7 +21,7 @@ function App() {
     );
   
   return (
-    <div>
+    <div >
       <Navbar />
       <Outlet  />
       <Toaster />
