@@ -3,7 +3,7 @@ import { customeJWTPayload } from '../services/auth';
 import User from '../models/user.model';
 import { Request, Response, NextFunction } from 'express';
 import { env } from '../services/env';
-import { UserWithoutPassword } from '../services/validation.user';
+import { TAuth } from '../services/validation.user';
 
 
 
@@ -11,7 +11,7 @@ export interface AuthenticatedRequest extends Request {
   cookies: {
     jwt?: string;
   };
-  userInfo?: UserWithoutPassword;
+  userInfo?: TAuth;
 }
 
 export const authenticateToken = async (
@@ -32,7 +32,7 @@ export const authenticateToken = async (
 
     const decode = jwt.verify(token, env.JWT_KEY) as customeJWTPayload;
     
-    const user = await User.findById(decode.userId).select('-password');
+    const user = await User.findById(decode.userId);
     
     if (!user) {
        res.status(401).json({
@@ -42,7 +42,7 @@ export const authenticateToken = async (
       return;
     }
 
-    req.userInfo  = user;
+    req.userInfo  = user.toAuthJSON();
     next();
     
   } catch (error) {

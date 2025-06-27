@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import User from "../models/user.model";
-import {TUser, updateShape, userProfileShape, userShape, UserWithoutPassword} from "../services/validation.user";
+import {userProfileShape, userShape,updateUserShape} from "../services/validation.user";
 import bcrypt from 'bcrypt';
 import { generateToken } from "../services/auth";
 import {env} from "../services/env";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import cloudinary from "../services/cloudinaryConfig";
+
 
 export  const handleCreateUser=async(req: Request, res: Response)=>{
     try {
@@ -18,10 +19,10 @@ export  const handleCreateUser=async(req: Request, res: Response)=>{
       });
       return;
     }
-
-    const { fullName, email, password} = result.data ;
+    const { fullName, email, password,profilePic} = result.data ;
 
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
       res.status(400).json({
         success: false,
@@ -29,26 +30,22 @@ export  const handleCreateUser=async(req: Request, res: Response)=>{
       });
       return;
     }
-    const salt=await bcrypt.genSalt(12);
-    const hashedPassword=await bcrypt.hash(password,salt);
-
     const newUser = new User({
       fullName,
       email,
-      password:hashedPassword,
+      password,
+      profilePic
     });
     await newUser.save();
 
-   const token = generateToken(newUser._id);
-
-    res.cookie('jwt', token, {
+    const userInfo=newUser.toAuthJSON();
+    const token = generateToken(userInfo.id);
+   
+    res.status(201).cookie('jwt', token, {
       maxAge: 7 * 24 * 60 * 60 * 1000, 
       httpOnly: true,
       secure: env.NODE_ENV !== 'development',
-    });
-    const userId:UserWithoutPassword=newUser
-    res.status(201).json(userId);
-
+    }).json(userInfo);
   } catch (err) {
    res.status(500)
    .json({
@@ -57,7 +54,6 @@ export  const handleCreateUser=async(req: Request, res: Response)=>{
    })
   }
 };
-
 
 export const handleLogin = async (
   req: Request,
@@ -98,15 +94,15 @@ export const handleLogin = async (
       return;
     }
 
-    const token = generateToken(user._id);
+    const userInfo= user.toAuthJSON();
+    const token = generateToken(userInfo.id);
+   
 
-    res.cookie('jwt', token, {
+    res.status(200).cookie('jwt', token, {
       maxAge: 7 * 24 * 60 * 60 * 1000, 
       httpOnly: true,
       secure: env.NODE_ENV !== 'development',
-    });
-    const userId:UserWithoutPassword=user
-    res.status(200).json(userId);
+    }).json(userInfo);
   } catch (error: unknown) {
     next(error); 
   }
@@ -130,11 +126,11 @@ export const handleLogout = async(req: Request, res: Response) => {
 
 export const handleupdateProfile=async(req:AuthenticatedRequest,res:Response)=>{
       try {
-        const {profilePic}=updateShape.parse(req.body);
+        const {profilePic}=updateUserShape.parse(req.body);
         const user=req.userInfo;
         const uploadProfile=await cloudinary.uploader.upload(profilePic);
-        const updatedUser=await User.findByIdAndUpdate(user?._id,{profilePic:uploadProfile.secure_url},{new:true})
-        res.json(updatedUser).status(200);
+        const updatedUser=await User.findByIdAndUpdate(user?.id,{profilePic:uploadProfile.secure_url},{new:true})
+        res.json(updatedUser?.toAuthJSON()).status(200);
       } catch (error) {
         res.json({success:false}).status(500);
       }

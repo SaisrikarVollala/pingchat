@@ -26,7 +26,7 @@ const messageSchema = new Schema<Message>(
             type: String,
         },
     },
-    { timestamps: true }
+    { timestamps: true ,versionKey:false}
 );
 
 
