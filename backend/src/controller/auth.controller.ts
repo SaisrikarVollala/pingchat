@@ -5,7 +5,6 @@ import { generateToken } from "../services/authUser";
 import { sendMail } from "../utils/nodemailer";
 import { User } from "../model/user.model";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { Env } from "../config/env";
 
 
@@ -17,28 +16,36 @@ function generateOtp(): string {
 
 export async function register(req: Request, res: Response) {
   try {
-    const data = registerSchema.parse(req.body);
+    const { username, email, password, displayName } = registerSchema.parse(req.body);
 
     const existing = await User.findOne({
-      $or: [{ email: data.email }, { username: data.username }],
+      $or: [{ email }, { username }],
     });
-    if (existing)
+
+    if (existing) {
       return res.status(400).json({ message: "User already exists" });
+    }
 
     const otp = generateOtp();
+    const passwordHash = await bcrypt.hash(password, 10); 
 
     await redisClient.setEx(
-      `otp:${data.email}`,
-      300, 
-      JSON.stringify({ otp, data })
+      `otp:${email}`,
+      300,
+      JSON.stringify({
+        otp,
+        userData: { username, email, displayName, passwordHash } 
+      })
     );
 
-    await sendMail(data.email, otp);
-    res.json({ message: "OTP sent to email" });
+    await sendMail(email, otp);
+
+    return res.status(200).json({ message: "OTP sent to email" });
   } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: err.message });
   }
 }
+
 
 
 export async function verifyOtp(req: Request, res: Response) {
@@ -46,30 +53,38 @@ export async function verifyOtp(req: Request, res: Response) {
     const { email, otp } = otpSchema.parse(req.body);
 
     const recordStr = await redisClient.get(`otp:${email}`);
-    if (!recordStr)
+    if (!recordStr) return res.status(400).json({ message: "Invalid or expired OTP" });
 
-    return res.status(400).json({ message: "Invalid or expired OTP" });
+    const { otp: savedOtp, userData } = JSON.parse(recordStr);
+    if (savedOtp !== otp) return res.status(400).json({ message: "Invalid OTP" });
 
-    const record = JSON.parse(recordStr);
-    if (record.otp !== otp)
-      return res.status(400).json({ message: "Invalid OTP" });
+    const { username, displayName, passwordHash } = userData;
 
-    const user=await User.create({ ...record.data });
-
+    const user = await User.create({
+      username,
+      email,
+      displayName,
+      passwordHash,        
+    });
 
     await redisClient.del(`otp:${email}`);
 
-    const token=generateToken(user.toAuthJSON());
+    const token = generateToken(user.toAuthJSON());
 
-    res.json({ message: "User created successfully",}).status(201).cookie("jwt",token,{
-      httpOnly:true,
-      secure:Env.NODE_ENV==="production",
-      maxAge:7*24*60*60*1000, 
-    });
+    return res
+      .status(201)
+      .cookie("jwt", token, {
+        httpOnly: true,
+        secure: Env.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .json({ message: "User created successfully" });
+
   } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    return res.status(400).json({ error: err.message });
   }
 }
+
 
 export async function handleLogin(req: Request, res: Response) {
   try {
@@ -84,11 +99,11 @@ export async function handleLogin(req: Request, res: Response) {
 
     const token=generateToken(user.toAuthJSON());
 
-    res.json({ message: "Login successful" }).cookie("jwt",token,{
+    res.cookie("jwt",token,{
       httpOnly:true,
       secure:Env.NODE_ENV==="production",
         maxAge:7*24*60*60*1000, 
-    });
+    }).json({ message: "Login successful" });
     } catch (err: any) {
     res.status(400).json({ error: err.message });
     }

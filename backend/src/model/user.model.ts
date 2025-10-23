@@ -27,16 +27,7 @@ const userSchema = new Schema<IUser>(
   { timestamps: { createdAt: true, updatedAt: true } }
 );
 
-userSchema.pre<IUser>('save', async function (next) {
-  if (!this.isModified('passwordHash')) return next();
-  try {
-    const salt = await bcrypt.genSalt(10); // or 12 for stronger hash
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-    next();
-  } catch (err) {
-    next(err as Error);
-  }
-});
+
 
 
 userSchema.methods.comparePassword = async function (
@@ -48,7 +39,7 @@ userSchema.methods.comparePassword = async function (
 userSchema.methods.toAuthJSON = function (): TAuth {
   return {
     username: this.userName,
-    id: this._id.string(),
+    id: this._id.toString(),
     displayName: this.displayName,
     profilePic: this.avatarUrl,
   };
