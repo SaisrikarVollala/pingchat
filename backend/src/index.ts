@@ -1,8 +1,10 @@
 import express, { Request, Response } from "express";
 import authRoutes from "./router/auth.route";
 import connectDB from "./config/db.config";
+import { Env } from "./config/env";
+import { redisConnect} from "./config/redisClient";
 const app = express();
-const PORT = 5000;
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -12,7 +14,14 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello from TypeScript backend 🚀");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+app.listen(Env.PORT, () => {
+  console.log(`Server running at http://localhost:${Env.PORT}`);
   connectDB();
+  redisConnect()
+  .then(()=>{
+    console.log("Redis connected successfully");
+    })
+  .catch((err)=>{
+    console.error("Redis connection failed:",err);
+  });
 });

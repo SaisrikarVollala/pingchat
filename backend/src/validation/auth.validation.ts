@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+
 export const registerSchema = z.object({
   username: z.string().min(3).max(20),
   displayName: z.string().min(2).max(50),
@@ -12,5 +13,15 @@ export const otpSchema = z.object({
   otp: z.string().length(6),
 });
 
+export type TAuth={
+  username: string;
+  displayName: string;
+  profilePic:string;
+  id: string;
+}
+export const loginSchema = z.object({
+  username: z.string().min(3).max(20),
+  password: z.string().min(6),
+});
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type OtpInput = z.infer<typeof otpSchema>;
