@@ -3,9 +3,9 @@ import { Env } from "./env"
 
 const redisClient = createClient({
     username: 'default',
-    password: 'vR5FxUW2h54podI9zWx01JCBornBJ2Gm',
+    password: Env.REDIS_PASS,
     socket: {
-        host: 'redis-17926.c13.us-east-1-3.ec2.redns.redis-cloud.com',
+        host: Env.REDIS_URL,
         port: 17926
     }
 });
