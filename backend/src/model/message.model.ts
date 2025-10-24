@@ -6,7 +6,7 @@ interface TAttachment {
 }
 export interface IMessage{
   chatId: Types.ObjectId;  // Reference to Chat
-  senderId: string;        // Clerk userId
+  senderId: string;        
   content: string;
   attachments?: TAttachment[];
   createdAt: Date;
