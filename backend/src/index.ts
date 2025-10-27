@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import authRoutes from "./router/auth.route";
+import cookieParser from "cookie-parser";
 import connectDB from "./config/db.config";
 import { Env } from "./config/env";
 import { redisConnect} from "./config/redisClient";
@@ -7,6 +8,7 @@ const app = express();
 
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/auth", authRoutes);

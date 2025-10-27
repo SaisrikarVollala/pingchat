@@ -2,19 +2,13 @@ import jwt from 'jsonwebtoken';
 import { User } from '../model/user.model';
 import { Request, Response, NextFunction } from 'express';
 import { Env } from '../config/env';
-import type { TAuth } from '../validation/auth.validation';
 import type { IDecode } from '../services/authUser';
 
 
-export interface AuthenticatedRequest extends Request {
-  cookies: {
-    jwt?: string;
-  };
-  authInfo: TAuth;
-}
+
 
 export const authenticateToken = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 )=> {
@@ -22,7 +16,7 @@ export const authenticateToken = async (
     const token = req.cookies.jwt;
     
     if (!token) {
-       res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Unauthorized Access: No token provided'
       });
@@ -31,27 +25,27 @@ export const authenticateToken = async (
 
     const decode = jwt.verify(token, Env.JWT_SECRET) as IDecode 
     
-    const user = await User.findById(decode.payload.id);
+    const user = await User.findById(decode.id);
     
     if (!user) {
-       res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Unauthorized Access: User not found'
       });
       return;
     }
 
-    req.authInfo = decode.payload;
+    req.authInfo = user.toAuthJSON();
     next();
     
   } catch (error) {
     console.error('Authentication error:', error);
     
     if (error instanceof jwt.JsonWebTokenError) {
-       res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Unauthorized Access: Invalid token'
-      })
+      });
       return;
     }
 

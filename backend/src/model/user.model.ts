@@ -1,5 +1,4 @@
 import { Schema, model, Document} from "mongoose";
-import type {TAuth} from "../validation/auth.validation";
 import bcrypt from "bcryptjs";
 
 export interface IUser extends Document {
@@ -10,7 +9,10 @@ export interface IUser extends Document {
  email: string;
  createdAt: Date;
  updatedAt: Date;
- toAuthJSON():TAuth;
+ toAuthJSON():{
+   username: string;
+   id: string;
+ };
  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -36,12 +38,13 @@ userSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-userSchema.methods.toAuthJSON = function (): TAuth {
+userSchema.methods.toAuthJSON = function ():{
+  username: string;
+  id: string;
+} {
   return {
-    username: this.userName,
+    username: this.username,
     id: this._id.toString(),
-    displayName: this.displayName,
-    profilePic: this.avatarUrl,
   };
 }
 

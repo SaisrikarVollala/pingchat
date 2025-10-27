@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import  { Request, Response } from "express";
 import { registerSchema, otpSchema,loginSchema } from "../validation/auth.validation";
 import redisClient  from "../config/redisClient";
 import { generateToken } from "../services/authUser";
@@ -6,6 +6,18 @@ import { sendMail } from "../utils/nodemailer";
 import { User } from "../model/user.model";
 import bcrypt from "bcryptjs";
 import { Env } from "../config/env";
+
+
+declare global {
+  namespace Express {
+    interface Request {
+      authInfo?:{
+  username: string;
+  id: string;
+} ;
+    }
+  }
+}
 
 
 
@@ -103,8 +115,26 @@ export async function handleLogin(req: Request, res: Response) {
       httpOnly:true,
       secure:Env.NODE_ENV==="production",
         maxAge:7*24*60*60*1000, 
-    }).json({ message: "Login successful" });
+    }).json({ message: "Login successful",token});
     } catch (err: any) {
     res.status(400).json({ error: err.message });
     }
+}
+
+export async function handleLogout(req: Request, res: Response) {
+  try {
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      secure: Env.NODE_ENV === "production",
+    }).json({ message: "Logout successful" });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  } 
+}
+export async function checkAuth(req:Request, res: Response) {
+  try {
+    res.status(200).json(req.authInfo);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  } 
 }

@@ -13,12 +13,7 @@ export const otpSchema = z.object({
   otp: z.string().length(6),
 });
 
-export type TAuth={
-  username: string;
-  displayName: string;
-  profilePic:string;
-  id: string;
-}
+
 export const loginSchema = z.object({
   username: z.string().min(3).max(20),
   password: z.string().min(6),
