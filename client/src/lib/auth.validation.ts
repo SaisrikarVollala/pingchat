@@ -1,5 +1,5 @@
 import {z} from 'zod';
-export const register = z.object({
+export const registerForm = z.object({
     username: z.string().min(3, "Full name must be at least 3 characters").trim(),
     email: z.email("Invalid email format").trim(),
     displayName: z.string().min(3, "Display name must be at least 3 characters").trim(),
@@ -10,7 +10,11 @@ export const register = z.object({
       .regex(/[0-9]/, "Password must contain at least one number"),
   });
 
-export const login= z.object({
+
+export const loginForm= z.object({
     username: z.string().trim(),
     password: z.string(),
 });
+
+export type TRegisterForm = z.infer<typeof registerForm>;
+export type TLoginForm = z.infer<typeof loginForm>;

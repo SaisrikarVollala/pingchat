@@ -3,7 +3,7 @@ import { registerSchema, otpSchema,loginSchema } from "../validation/auth.valida
 import redisClient  from "../config/redisClient";
 import { generateToken } from "../services/authUser";
 import { sendMail } from "../utils/nodemailer";
-import { User } from "../model/user.model";
+import { TAuth, User } from "../model/user.model";
 import bcrypt from "bcryptjs";
 import { Env } from "../config/env";
 
@@ -11,10 +11,7 @@ import { Env } from "../config/env";
 declare global {
   namespace Express {
     interface Request {
-      authInfo?:{
-  username: string;
-  id: string;
-} ;
+      auth?:TAuth
     }
   }
 }
@@ -81,7 +78,7 @@ export async function verifyOtp(req: Request, res: Response) {
 
     await redisClient.del(`otp:${email}`);
 
-    const token = generateToken(user.toAuthJSON());
+    const token = generateToken(user.toJson());
 
     return res
       .status(201)
@@ -109,7 +106,7 @@ export async function handleLogin(req: Request, res: Response) {
     if (!isPasswordValid)
         return res.status(400).json({ message: "Invalid username or password" });
 
-    const token=generateToken(user.toAuthJSON());
+    const token=generateToken(user.toJson());
 
     res.cookie("jwt",token,{
       httpOnly:true,
@@ -133,7 +130,7 @@ export async function handleLogout(req: Request, res: Response) {
 }
 export async function checkAuth(req:Request, res: Response) {
   try {
-    res.status(200).json(req.authInfo);
+    res.status(200).json(req.auth);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   } 

@@ -23,7 +23,7 @@ export const authenticateToken = async (
       return;
     }
 
-    const decode = jwt.verify(token, Env.JWT_SECRET) as IDecode 
+    const decode = jwt.verify(token, Env.JWT_SECRET) as IDecode;
     
     const user = await User.findById(decode.id);
     
@@ -35,7 +35,7 @@ export const authenticateToken = async (
       return;
     }
 
-    req.authInfo = user.toAuthJSON();
+    req.auth = user.toJson();
     next();
     
   } catch (error) {

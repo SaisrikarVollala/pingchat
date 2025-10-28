@@ -3,6 +3,7 @@ import authRoutes from "./router/auth.route";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.config";
 import { Env } from "./config/env";
+import cors from "cors";
 import { redisConnect} from "./config/redisClient";
 const app = express();
 
@@ -10,6 +11,11 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 
 app.use("/auth", authRoutes);
 app.get("/", (req: Request, res: Response) => {

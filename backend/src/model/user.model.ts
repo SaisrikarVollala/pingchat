@@ -4,26 +4,28 @@ import bcrypt from "bcryptjs";
 export interface IUser extends Document {
  username: string;
  displayName: string;
- profilePic: string;
+ profile: string;
  passwordHash: string;
  email: string;
  createdAt: Date;
  updatedAt: Date;
- toAuthJSON():{
-   username: string;
-   id: string;
- };
+ toJson():TAuth
  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-
+export type TAuth = {
+  username: string;
+  displayName: string;
+  id: string;
+  profile: string;
+}
 
 const userSchema = new Schema<IUser>(
   {
    email: { type: String, required: true, unique: true },
     username: { type: String, required: true, unique: true },
     displayName: { type: String, required: true },
-    profilePic: { type: String ,default: "" },
+    profile: { type: String ,default: "" },
     passwordHash: { type: String, required: true },
   },
   { timestamps: { createdAt: true, updatedAt: true } }
@@ -38,13 +40,12 @@ userSchema.methods.comparePassword = async function (
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-userSchema.methods.toAuthJSON = function ():{
-  username: string;
-  id: string;
-} {
+userSchema.methods.toJson = function ():TAuth{
   return {
     username: this.username,
     id: this._id.toString(),
+    profile: this.profile,
+    displayName: this.displayName,
   };
 }
 

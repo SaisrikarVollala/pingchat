@@ -1,123 +1,119 @@
-// // store/useUserStore.ts
-// import { create } from "zustand";
-// import type  { TUser } from "../assets/userTypes";
-
-// interface UserStore {
-//   user: TUser | null;
-//   setUser: (user: TUser) => void;
-//   clearUser: () => void;
-// }
-
-// export const useUserStore = create<UserStore>((set) => ({
-//   user: null,
-//   setUser: (user) => set({ user }),
-//   clearUser: () => set({ user: null }),
-// }));
-
 import { create } from "zustand";
 import axiosInstance from "../lib/axios.config";
-import 
-import type { TformData, TAuth ,TLoginFormData} from "../lib/validation";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import type { TRegisterForm, TLoginForm } from "../lib/auth.validation";
 
-
-type TAuthStore = {
-    authUser:   null| TAuth;
-    isSigningUp: boolean;
-    isLoggingIn: boolean;
-    isUpdatingProfile: boolean;
-    isCheckingAuth: boolean;
-    socket:null;
-    checkAuth: () => Promise<void>;
-    signUp: (data: TformData) => Promise<void>;
-    logout: () => Promise<void>;
-    login: (data: TLoginFormData) => Promise<void>;
-    updateProfile: (data:string) => Promise<void>;
-    connectSocket:()=>void;
-    disConnectSocket:()=>void;
+type TAuth = {
+  username: string;
+  displayName: string;
+  id: string;
+  profile: string;
 };
 
-export const useAuthStore = create<TAuthStore>()((set,get) => ({
-    authUser: null,
-    isSigningUp: false,
-    isLoggingIn: false,
-    isUpdatingProfile: false,
-    isCheckingAuth: true,
-    socket:null,
+type TAuthStore = {
+  authUser: null | TAuth;
+  isSigningUp: boolean;
+  isLoggingIn: boolean;
+  isCheckingAuth: boolean;
+  socket: null;
+  checkAuth: () => Promise<void>;
+  signUp: (data: TRegisterForm) => Promise<boolean>;
+  logout: () => Promise<void>;
+  login: (data: TLoginForm) => Promise<void>;
+  connectSocket: () => void;
+  disConnectSocket: () => void;
+verifyOtp: (email: string, otp: string) => Promise<boolean>;
+};
 
-    checkAuth:async() => {
-        try {
-            const response = await axiosInstance.get('/auth/check');
-            const userInfo = AuthShape.parse(response.data);
-            set({ authUser: userInfo, isCheckingAuth: false });
-        } catch (error) {
-            console.error("Error checking authentication:", error);
-            set({ authUser: null });
-        } finally {
-            set({ isCheckingAuth: false });
-        }
-    },
+export const useAuthStore = create<TAuthStore>()((set, get) => ({
+  authUser: null,
+  isSigningUp: false,
+  isLoggingIn: false,
+  isCheckingAuth: true,
+  socket: null,
 
-    signUp: async (data: TformData) => {
-        try {
-            const response = await axiosInstance.post('/auth/signup', data);
-            const userInfo = AuthShape.parse(response.data);
-            set({ authUser: userInfo });
-            toast.success("Account created successfully!");
-            get().connectSocket();
-
-        } catch (error) {
-            toast.error("Failed to create account. Please try again.");
-            console.error("Error during sign up:", error);
-        } finally {
-            set({ isSigningUp: false });
-        }
-    },
-    logout: async () => {
-        try {
-            await axiosInstance.post("/auth/logout");;
-            set({authUser:null});
-            toast.success('Logged Out ');
-            get().disConnectSocket();
-        } catch (error) {
-            toast.error("failed to logout");
-            console.log(error);
-        }
-    },
-    login: async (data: TLoginFormData) => {
-        try {
-            set({ isLoggingIn: true });
-            const response = await axiosInstance.post('/auth/login', data);
-            const userInfo = AuthShape.parse(response.data);
-            set({ authUser: userInfo });
-            toast.success("Logged in successfully!");
-            get().connectSocket()
-        } catch (error) {
-            toast.error("Failed to log in. Please check your credentials.");
-            console.error("Error during login:", error);
-        } finally {
-            set({ isLoggingIn: false });
-        }
-    },
-    updateProfile: async (data:string) => {
-        set({ isUpdatingProfile: true });
-        try {
-            const res= await axiosInstance.put('/auth/update-profile',{profilePic:data});
-            set({authUser:res.data as TAuth});
-            toast.success("Profile updated succesfully");
-        } catch (error) {
-            console.log(error);
-        }finally{
-            set({isUpdatingProfile:false})
-        }
-    },
-    connectSocket:()=>{
-      
-    },
-    disConnectSocket:()=>{
-
+  checkAuth: async () => {
+    console.log("[AUTH] Checking auth...");
+    set({ isCheckingAuth: true });
+    try {
+      const res = await axiosInstance.get("/auth/check");
+      set({ authUser: res.data });
+    } catch (err) {
+      console.log("[AUTH] checkAuth failed:", err);
+      set({ authUser: null });
+    } finally {
+      set({ isCheckingAuth: false });
     }
+  },
 
-}))
-  
-  
+  signUp: async (data) => {
+    set({ isSigningUp: true });
+    try {
+      await axiosInstance.post("/auth/register", data);
+      return true;
+      toast.success("Account created");
+    //   get().connectSocket();
+    } catch (err) {
+      console.log("[AUTH] SignUp error:", err);
+      toast.error("Sign up failed");
+      return false;
+    } finally {
+      set({ isSigningUp: false });
+    }
+  },
+
+  verifyOtp: async (email: string, otp: string) => {
+    try {
+      const response = await axiosInstance.post("/auth/verify-otp", {
+        email,
+        otp
+      });
+      await get().checkAuth();
+      
+      toast.success(response.data.message || "Email verified successfully!");
+      return true;
+    } catch (err) {
+      console.error("[AUTH] Verify OTP error:", err);
+      toast.error("OTP verification failed");
+      return false;
+    }
+  },
+
+  login: async (data) => {
+    console.log("[AUTH] Login attempt:", data);
+    set({ isLoggingIn: true });
+    try {
+      await axiosInstance.post("/auth/login", data);
+      await get().checkAuth();
+      toast.success("Logged in");
+    //   get().connectSocket();
+    } catch (err) {
+      console.log("[AUTH] Login error:", err);
+      toast.error("Login failed");
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+
+  logout: async () => {
+    console.log("[AUTH] Logout attempt...");
+    try {
+      await axiosInstance.post("/auth/logout");
+      console.log("[AUTH] Logout success");
+      set({ authUser: null });
+      get().disConnectSocket();
+      toast.success("Logged out");
+    } catch (err) {
+      console.log("[AUTH] Logout error:", err);
+      toast.error("Logout failed");
+    }
+  },
+
+  connectSocket: () => {
+    console.log("[SOCKET] connectSocket called (no implementation yet)");
+  },
+
+  disConnectSocket: () => {
+    console.log("[SOCKET] disConnectSocket called (no implementation yet)");
+  },
+}));
