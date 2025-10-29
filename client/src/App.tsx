@@ -4,9 +4,9 @@ import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./stores/useAuthStore";
 import Register from "./pages/Register";
-import VerifyOtp from "./pages/VerifyOtp";
+import VerifyOtp  from "./pages/VerifyOtp";
 import Login from "./pages/Login";
-import Chat from "./pages/chat"
+import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 

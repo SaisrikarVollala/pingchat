@@ -16,6 +16,7 @@ const envSchema = z.object({
   EMAIL_PASS: z.string().min(1, { message: 'EMAIL_PASS is required' }),
   JWT_SECRET: z.string().min(1, { message: 'JWT_SECRET is required' }),
   NODE_ENV: z.enum(['development', 'production']).default('development'),
+  CLIENT_URL: z.url({ message: 'CLIENT_URL must be a valid URL' }).min(1, { message: 'CLIENT_URL is required' }),
 });
 
 

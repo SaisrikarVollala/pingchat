@@ -1,9 +1,10 @@
 // models/Chat.ts
 import { Schema, model, Types } from "mongoose";
+import { ref } from "process";
 
 export interface IChat {
   type: "direct" | "group";
-  participants: string[];        
+  participants: Types.ObjectId[];        
   lastMessage?: Types.ObjectId; 
   createdAt: Date;
   updatedAt: Date;
@@ -12,10 +13,11 @@ export interface IChat {
 const ChatSchema = new Schema<IChat>(
   {
     type: { type: String, enum: ["direct", "group"], required: true },
-    participants: [{ type: String, required: true }], // Clerk IDs
+    participants: [{ type: Schema.Types.ObjectId, required: true,ref: 'User' }], 
     lastMessage: { type: Schema.Types.ObjectId, ref: "Message" },
   },
   { timestamps: true }
 );
+ChatSchema.index({ participants: 1 });
 
 export const Chat = model<IChat>("Chat", ChatSchema);

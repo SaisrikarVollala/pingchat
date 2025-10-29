@@ -1,14 +1,17 @@
 // models/Message.ts
 import { Schema, model, Document, Types } from "mongoose";
 interface TAttachment {
-  type: string; // "image" | "file" etc.
+  type: string; 
   url: string;
 }
+
 export interface IMessage{
-  chatId: Types.ObjectId;  // Reference to Chat
-  senderId: string;        
+  chatId: Types.ObjectId;  
+  senderId: Types.ObjectId;        
   content: string;
   attachments?: TAttachment[];
+  deliveredAt: Date;
+  readAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,7 +19,9 @@ export interface IMessage{
 const MessageSchema = new Schema<IMessage>(
   {
     chatId: { type: Schema.Types.ObjectId, ref: "Chat", required: true },
-    senderId: { type: String, required: true }, // Clerk userId
+    senderId: { type: Schema.Types.ObjectId, required: true },
+    readAt: { type: Date,required:true },
+    deliveredAt: { type: Date ,required:true },
     content: { type: String, required: true },
     attachments: [
       {
@@ -31,5 +36,6 @@ const MessageSchema = new Schema<IMessage>(
   },
   { timestamps: true }
 );
+MessageSchema.index({ chatId: 1, createdAt: -1 });
 
 export const Message = model<IMessage>("Message", MessageSchema);
