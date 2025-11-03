@@ -8,7 +8,7 @@ getAllOnlineUsers,
   removeUserOnline,
   incrementUnreadCount,
   clearUnreadCount,
-} from '../utils/messagesCache';
+} from '../services/messagesCache';
 
 type AckResponse = { status: 'ok' | 'error'; error?: string };
 

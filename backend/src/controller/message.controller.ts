@@ -1,197 +1,194 @@
-// import express from 'express';
-// import { Chat } from '../model/chats.model';
-// import { Message } from '../model/message.model';
-// import { authenticate } from './middleware/auth';
+import express from 'express';
+import { Chat } from '../model/chats.model';
+import { Message } from '../model/message.model';
+import { Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth.middleware';
+const router = express.Router();
+import { getCachedUnreadCount, cacheUnreadCount,getUserSocketId } from '../services/messagesCache';
 
-// const router = express.Router();
 
-// router.get('/chats', authenticate, async (req, res) => {
-//   try {
-//     const userId = req.user._id;
+export const getChats= async (req:Request, res:Response) => {
+  try {
+    const userId = req.auth.id;
+    const chats = await Chat.find({
+      type: 'direct',
+      participants: userId,
+    })
+      .populate('participants', 'username avatar displayName ')
+      .populate({
+        path: 'lastMessage',
+        select: 'content createdAt senderId readAt deliveredAt',
+      })
+      .sort({ updatedAt: -1 });
 
-//     const chats = await Chat.find({
-//       type: 'direct',
-//       participants: userId,
-//     })
-//       .populate('participants', 'name avatar email')
-//       .populate({
-//         path: 'lastMessage',
-//         select: 'content createdAt senderId readAt deliveredAt',
-//       })
-//       .sort({ updatedAt: -1 });
-
-//     // Get unread counts from Redis (faster) with DB fallback
-//     const chatsWithUnread = await Promise.all(
-//       chats.map(async (chat) => {
-//         let unreadCount = await getCachedUnreadCount(userId.toString(), chat._id.toString());
+    const chatsWithUnread = await Promise.all(
+      chats.map(async (chat) => {
+        let unreadCount = await getCachedUnreadCount(userId.toString(), chat._id.toString());
         
-//         // Fallback to DB if not in cache
-//         if (unreadCount === null) {
-//           unreadCount = await Message.countDocuments({
-//             chatId: chat._id,
-//             senderId: { $ne: userId },
-//             readAt: null,
-//           });
-//           // Cache for next time
-//           await cacheUnreadCount(userId.toString(), chat._id.toString(), unreadCount);
-//         }
+        // Fallback to DB if not in cache
+        if (unreadCount === null) {
+          unreadCount = await Message.countDocuments({
+            chatId: chat._id,
+            senderId: { $ne: userId },
+            readAt: null,
+          });
+          await cacheUnreadCount(userId.toString(), chat._id.toString(), unreadCount);
+        }
 
-//         // Check if other participant is online
-//         const otherUser = chat.participants.find((p: any) => p._id.toString() !== userId.toString());
-//         const isOnline = otherUser ? !!(await getUserSocketId(otherUser._id.toString())) : false;
+        const otherUser = chat.participants.find((p: any) => p._id.toString() !== userId.toString());
+        const isOnline = otherUser ? !!(await getUserSocketId(otherUser._id.toString())) : false;
 
-//         return {
-//           ...chat.toObject(),
-//           unreadCount,
-//           isOnline,
-//         };
-//       })
-//     );
+        return {
+          ...chat.toObject(),
+          unreadCount,
+          isOnline,
+        };
+      })
+    );
 
-//     res.json({ success: true, chats: chatsWithUnread });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: 'Failed to fetch chats' });
-//   }
-// });
+    res.json({ success: true, chats: chatsWithUnread });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch chats' });
+  }
+};
 
-// // Get or create direct chat with another user
-// router.post('/chats/direct', authenticate, async (req, res) => {
-//   try {
-//     const { otherUserId } = req.body;
-//     const currentUserId = req.user._id;
 
-//     if (otherUserId === currentUserId.toString()) {
-//       return res.status(400).json({ success: false, error: 'Cannot chat with yourself' });
-//     }
+export const handleChats= async (req:Request, res:Response) => {
+  try {
+    const { otherUserId } = req.body;
+    const currentUserId = req.auth?.id;
 
-//     // Check if chat already exists
-//     let chat = await Chat.findOne({
-//       type: 'direct',
-//       participants: { $all: [currentUserId, otherUserId], $size: 2 },
-//     }).populate('participants', 'name avatar email');
+    if (otherUserId === currentUserId.toString()) {
+      return res.status(400).json({ success: false, error: 'Cannot chat with yourself' });
+    }
 
-//     if (!chat) {
-//       chat = await Chat.create({
-//         type: 'direct',
-//         participants: [currentUserId, otherUserId],
-//       });
+    let chat = await Chat.findOne({
+      type: 'direct',
+      participants: { $all: [currentUserId, otherUserId], $size: 2 },
+    }).populate('participants', 'username avatar displayName ');
 
-//       chat = await Chat.findById(chat._id).populate('participants', 'name avatar email');
-//     }
+    if (!chat) {
+      chat = await Chat.create({
+        type: 'direct',
+        participants: [currentUserId, otherUserId],
+      });
 
-//     res.json({ success: true, chat });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: 'Failed to create/get chat' });
-//   }
-// });
+      chat = await Chat.findById(chat._id).populate('participants', 'username avatar displayName ');
+    }
 
-// // Get messages for a specific chat (with pagination)
-// router.get('/chats/:chatId/messages', authenticate, async (req, res) => {
-//   try {
-//     const { chatId } = req.params;
-//     const page = parseInt(req.query.page as string) || 1;
-//     const limit = parseInt(req.query.limit as string) || 50;
-//     const skip = (page - 1) * limit;
+    res.json({ success: true, chat });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to create/get chat' });
+  }
+};
 
-//     // Verify user is participant
-//     const chat = await Chat.findOne({
-//       _id: chatId,
-//       participants: req.user._id,
-//     });
 
-//     if (!chat) {
-//       return res.status(404).json({ success: false, error: 'Chat not found' });
-//     }
+export const getMessages=async (req:Request, res:Response) => {
+  try {
+    const { chatId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
 
-//     const messages = await Message.find({ chatId })
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit)
-//       .populate('senderId', 'name avatar');
+    // Verify user is participant
+    const chat = await Chat.findOne({
+      _id: chatId,
+      participants: req.auth.id,
+    });
 
-//     const total = await Message.countDocuments({ chatId });
+    if (!chat) {
+      return res.status(404).json({ success: false, error: 'Chat not found' });
+    }
 
-//     res.json({
-//       success: true,
-//       messages: messages.reverse(),
-//       pagination: {
-//         page,
-//         limit,
-//         total,
-//         pages: Math.ceil(total / limit),
-//       },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: 'Failed to fetch messages' });
-//   }
-// });
+    const messages = await Message.find({ chatId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('senderId', 'username avatar displayName ');
 
-// // Get single chat details
-// router.get('/chats/:chatId', authenticate, async (req, res) => {
-//   try {
-//     const { chatId } = req.params;
+    const total = await Message.countDocuments({ chatId });
 
-//     const chat = await Chat.findOne({
-//       _id: chatId,
-//       participants: req.user._id,
-//     })
-//       .populate('participants', 'name avatar email')
-//       .populate('lastMessage');
+    res.json({
+      success: true,
+      messages: messages.reverse(),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch messages' });
+  }
+};
 
-//     if (!chat) {
-//       return res.status(404).json({ success: false, error: 'Chat not found' });
-//     }
 
-//     const unreadCount = await Message.countDocuments({
-//       chatId: chat._id,
-//       senderId: { $ne: req.user._id },
-//       readAt: null,
-//     });
+export const handleChatDetails=async (req:Request, res:Response) => {
+  try {
+    const { chatId } = req.params;
 
-//     res.json({
-//       success: true,
-//       chat: {
-//         ...chat.toObject(),
-//         unreadCount,
-//       },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: 'Failed to fetch chat' });
-//   }
-// });
+    const chat = await Chat.findOne({
+      _id: chatId,
+      participants: req.auth.id,
+    })
+      .populate('participants', 'username avatar displayName ')
+      .populate('lastMessage');
 
-// // Delete chat
-// router.delete('/chats/:chatId', authenticate, async (req, res) => {
-//   try {
-//     const { chatId } = req.params;
+    if (!chat) {
+      return res.status(404).json({ success: false, error: 'Chat not found' });
+    }
 
-//     const chat = await Chat.findOne({
-//       _id: chatId,
-//       participants: req.user._id,
-//     });
+    const unreadCount = await Message.countDocuments({
+      chatId: chat._id,
+      senderId: { $ne: req.auth.id },
+      readAt: null,
+    });
 
-//     if (!chat) {
-//       return res.status(404).json({ success: false, error: 'Chat not found' });
-//     }
+    res.json({
+      success: true,
+      chat: {
+        ...chat.toObject(),
+        unreadCount,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch chat' });
+  }
+};
 
-//     await Message.deleteMany({ chatId });
-//     await Chat.findByIdAndDelete(chatId);
+// Delete chat
+ export const deleteChat=async (req:Request, res:Response) => {
+  try {
+    const { chatId } = req.params;
 
-//     res.json({ success: true, message: 'Chat deleted successfully' });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: 'Failed to delete chat' });
-//   }
-// });
+    const chat = await Chat.findOne({
+      _id: chatId,
+      participants: req.auth.id,
+    });
 
-// // Search messages in a chat
-// router.get('/chats/:chatId/search', authenticate, async (req, res) => {
+    if (!chat) {
+      return res.status(404).json({ success: false, error: 'Chat not found' });
+    }
+
+    await Message.deleteMany({ chatId });
+    await Chat.findByIdAndDelete(chatId);
+
+    res.json({ success: true, message: 'Chat deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to delete chat' });
+  }
+};
+
+
+// router.get('/chats/:chatId/search', authenticateToken, async (req, res) => {
 //   try {
 //     const { chatId } = req.params;
 //     const { query } = req.query;
 
 //     const chat = await Chat.findOne({
 //       _id: chatId,
-//       participants: req.user._id,
+//       participants: req.auth.id,
 //     });
 
 //     if (!chat) {
@@ -212,4 +209,4 @@
 //   }
 // });
 
-// export default router;
+

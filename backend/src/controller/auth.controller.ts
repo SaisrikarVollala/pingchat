@@ -11,7 +11,7 @@ import { Env } from "../config/env";
 declare global {
   namespace Express {
     interface Request {
-      auth?:TAuth
+      auth:TAuth
     }
   }
 }
