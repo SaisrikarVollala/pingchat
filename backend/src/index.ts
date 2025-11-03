@@ -21,9 +21,8 @@ app.use(cors({
 }));
 
 app.use("/api/auth", authRoutes);
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello from TypeScript backend 🚀");
-});
+// app.use("/api/message",messageRouter);
+
 
 httpserver.listen(Env.PORT, () => {
   console.log(`Server running at http://localhost:${Env.PORT}`);

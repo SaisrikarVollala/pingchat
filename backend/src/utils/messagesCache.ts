@@ -1,4 +1,8 @@
 import redisClient from '../config/redisClient';
+interface OnlineUsers {
+    userId: string;
+    socketId: string;
+}
 
 export const setUserOnline = async (userId: string, socketId: string) => {
   await redisClient.hSet('online_users', userId, socketId);
@@ -16,12 +20,11 @@ export const getAllOnlineUsers = async (): Promise<Record<string, string>> => {
   return await redisClient.hGetAll('online_users');
 };
 
-// Optional: Get all online user IDs
+
 export const getOnlineUserIds = async (): Promise<string[]> => {
   return await redisClient.hKeys('online_users');
-};
+}
 
-// Cache unread message counts (optional performance optimization)
 export const cacheUnreadCount = async (userId: string, chatId: string, count: number) => {
   await redisClient.hSet(`unread:${userId}`, chatId, count.toString());
 };
