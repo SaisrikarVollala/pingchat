@@ -68,6 +68,7 @@ export const handleChats= async (req:Request, res:Response) => {
     }).populate('participants', 'username avatar displayName ');
 
     if (!chat) {
+        console.log("Creating new chat between", currentUserId, "and", otherUserId);
       chat = await Chat.create({
         type: 'direct',
         participants: [currentUserId, otherUserId],

@@ -6,6 +6,7 @@ import http from "http";
 import { Env } from "./config/env";
 import cors from "cors";
 import { redisConnect} from "./config/redisClient";
+import messageRouter from "./router/message.route";
 
 const app = express();
 export const httpserver = http.createServer(app);
@@ -21,7 +22,7 @@ app.use(cors({
 }));
 
 app.use("/api/auth", authRoutes);
-// app.use("/api/message",messageRouter);
+app.use("/api",messageRouter);
 
 
 httpserver.listen(Env.PORT, () => {
