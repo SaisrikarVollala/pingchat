@@ -3,7 +3,7 @@ import { registerSchema, otpSchema,loginSchema } from "../validation/auth.valida
 import redisClient  from "../config/redisClient";
 import { generateToken } from "../services/authUser";
 import { sendMail } from "../utils/nodemailer";
-import { TAuth, User } from "../model/user.model";
+import {IAuthenticate, User } from "../model/user.model";
 import bcrypt from "bcryptjs";
 import { Env } from "../config/env";
 
@@ -11,7 +11,7 @@ import { Env } from "../config/env";
 declare global {
   namespace Express {
     interface Request {
-      auth:TAuth
+      auth: IAuthenticate
     }
   }
 }
@@ -100,11 +100,13 @@ export async function handleLogin(req: Request, res: Response) {
     const { username, password } = loginSchema.parse(req.body);
 
     const user = await User.findOne({ username });
+
     if (!user)
       return res.status(400).json({ message: "Invalid username or password" }); 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isPasswordValid)
-        return res.status(400).json({ message: "Invalid username or password" });
+
+    const isPasswordValid=await bcrypt.compare(password,user.passwordHash);
+      if (!isPasswordValid)
+      return res.status(400).json({ message: "Invalid username or password" });
 
     const token=generateToken(user.toJson());
 
@@ -112,8 +114,10 @@ export async function handleLogin(req: Request, res: Response) {
       httpOnly:true,
       secure:Env.NODE_ENV==="production",
         maxAge:7*24*60*60*1000, 
-    }).json({ message: "Login successful",token});
-    } catch (err: any) {
+    }).status(200).json({ message: "Login successful",token});
+    }
+    catch (err: any) {
+      console.error(err);
     res.status(400).json({ error: err.message });
     }
 }

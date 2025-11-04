@@ -5,7 +5,7 @@ import { authenticateToken } from "../middleware/auth.middleware";
 const authRouter = express.Router();
 
 authRouter.post("/register", register);
-authRouter.post("/verify-otp", verifyOtp);
+authRouter.post("/verifyOtp", verifyOtp);
 authRouter.post("/login", handleLogin);
 authRouter.post("/logout", handleLogout);
 authRouter.get("/check",authenticateToken,checkAuth);

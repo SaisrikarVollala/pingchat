@@ -8,7 +8,7 @@ import VerifyOtp  from "./pages/VerifyOtp";
 import Login from "./pages/Login";
 import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import Navbar from "./components/Navbar";
+import Navbar from "./pages/Navbar";
 
 
 
