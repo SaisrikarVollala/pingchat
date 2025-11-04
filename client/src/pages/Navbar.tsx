@@ -21,7 +21,7 @@ export default function Navbar() {
             onClick={() => navigate("/Profile")}
           >
            <img
-  src={authUser?.profile || avatar}
+  src={authUser?.avatar || avatar}
   alt="Profile"
   className="size-10 rounded-full object-cover"
 />

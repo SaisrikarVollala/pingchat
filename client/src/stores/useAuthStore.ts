@@ -7,7 +7,7 @@ type TAuth = {
   username: string;
   displayName: string;
   id: string;
-  profile: string;
+  avatar: string;
 };
 
 type TAuthStore = {

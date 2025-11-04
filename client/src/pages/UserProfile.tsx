@@ -66,7 +66,7 @@ const ProfilePage: React.FC = () => {
           <div className="flex flex-col items-center gap-3">
             <div className="relative">
               <img
-                src={selectedImg || authUser.profile || avatar}
+                src={selectedImg || authUser.avatar || avatar}
                 alt="Profile"
                 className="size-32 rounded-full object-cover border-4 border-base-300"
               />

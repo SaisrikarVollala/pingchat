@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 
-export default function VerifyOtp() {
+function VerifyOtp() {
   const [otp, setOtp] = useState('');
   const location = useLocation();
   const navigate = useNavigate();
@@ -48,3 +48,4 @@ export default function VerifyOtp() {
   );
   
 }
+export default VerifyOtp;
