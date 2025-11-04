@@ -1,15 +1,15 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { Loader } from "lucide-react";
+import { Home, Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./stores/useAuthStore";
 import Register from "./pages/Register";
 import VerifyOtp  from "./pages/VerifyOtp";
 import Login from "./pages/Login";
-import Chat from "./pages/Chat";
+// import Chat from "./pages/Chat";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import Navbar from "./pages/Navbar";
-
+import Navbar   from "./pages/Navbar";
+import ProfilePage from "./pages/UserProfile";
 
 
 // // Protected Route Component
@@ -51,26 +51,20 @@ function App() {
     <>
       {/* Show Navbar only for authenticated routes */}
       {authUser && <Navbar />}
-      
+
       <Routes>
         {/* Public Routes */}
         <Route
           path="/register"
-          element={
-            !authUser ? <Register /> : <Navigate to="/" replace />
-          }
+          element={!authUser ? <Register /> : <Navigate to="/" replace />}
         />
         <Route
           path="/verify-otp"
-          element={
-            !authUser ? <VerifyOtp /> : <Navigate to="/" replace />
-          }
+          element={!authUser ? <VerifyOtp /> : <Navigate to="/" replace />}
         />
         <Route
           path="/login"
-          element={
-            !authUser ? <Login /> : <Navigate to="/" replace />
-          }
+          element={!authUser ? <Login /> : <Navigate to="/" replace />}
         />
 
         {/* Protected Routes */}
@@ -78,7 +72,17 @@ function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Chat />
+              {/* <Chat /> */}
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />
@@ -90,8 +94,8 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#333',
-            color: '#fff',
+            background: "#333",
+            color: "#fff",
           },
         }}
       />
@@ -100,4 +104,3 @@ function App() {
 }
 
 export default App;
-
