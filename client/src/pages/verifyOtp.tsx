@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 function VerifyOtp() {
   const [otp, setOtp] = useState('');

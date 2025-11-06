@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { ChangeEvent } from "react";
-import { useAuthStore } from "../stores/useAuthStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, Lock, Info, Edit2 } from "lucide-react";
 import avatar from "../public/avatar.png";
 

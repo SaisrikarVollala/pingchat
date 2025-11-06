@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useAuthStore } from "../stores/useAuthStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { loginForm } from "../lib/auth.validation";
 import type { TLoginForm} from "../lib/auth.validation";
 import { Link } from "react-router-dom";

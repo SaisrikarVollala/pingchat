@@ -1,7 +1,5 @@
 import { Schema, model, Document} from "mongoose";
-import bcrypt from "bcryptjs";
-import { Interface } from "readline";
-import { email } from "zod";
+import { TAuth } from "../validation/auth.validation";
 
 export interface IUser extends Document {
  username: string;
@@ -11,18 +9,8 @@ export interface IUser extends Document {
  email: string;
  createdAt: Date;
  updatedAt: Date;
- toJson():IAuthenticate;
- comparePassword(candidatePassword: string): Promise<boolean>;
+ toJson():TAuth;
 }
-
-export interface IAuthenticate{
-  username: string;
-  id: string;
-  displayName: string;
-  avatar: string;
-  email: string;
-}
-
 
 const userSchema = new Schema<IUser>(
   {
@@ -36,18 +24,10 @@ const userSchema = new Schema<IUser>(
 );
 
 
-
-
-userSchema.methods.comparePassword = async function (
-  candidatePassword: string
-): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
-};
-
-userSchema.methods.toJson = function (): IAuthenticate {
+userSchema.methods.toJson = function (): TAuth {
   return {
     username: this.username,
-    id: this._id.toString(),
+    _id: this._id.toString(),
     displayName: this.displayName,
     avatar: this.avatar,
     email: this.email

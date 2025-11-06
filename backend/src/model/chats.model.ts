@@ -1,13 +1,11 @@
-// models/Chat.ts
 import { Schema, model, Types } from "mongoose";
-import { ref } from "process";
 
-export interface IChat {
+interface IChat  {
   type: "direct" | "group";
   participants: Types.ObjectId[];        
   lastMessage?: Types.ObjectId; 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const ChatSchema = new Schema<IChat>(
@@ -18,6 +16,7 @@ const ChatSchema = new Schema<IChat>(
   },
   { timestamps: true }
 );
+
 ChatSchema.index({ participants: 1 });
 
 export const Chat = model<IChat>("Chat", ChatSchema);

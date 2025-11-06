@@ -1,7 +1,7 @@
 import {registerForm } from "../lib/auth.validation";
 import type { TRegisterForm } from "../lib/auth.validation";
 import { useState } from "react";
-import { useAuthStore } from "../stores/useAuthStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { Eye, EyeOff, Loader2, Lock, Mail, User, MessagesSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import ImagePattern from "../components/ImagePattern";

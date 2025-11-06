@@ -8,6 +8,7 @@ import cors from "cors";
 import { redisConnect } from "./config/redisClient";
 import messageRouter from "./router/message.route";
 import "./controller/socket.controller";
+import { authenticateToken } from "./middleware/auth.middleware";
 
 const app = express();
 export const httpserver = http.createServer(app);
@@ -22,7 +23,7 @@ app.use(cors({
 }));
 
 app.use("/api/auth", authRoutes);
-app.use("/api", messageRouter);
+app.use("/api",messageRouter);
 
 httpserver.listen(Env.PORT, () => {
   console.log(`Server running at http://localhost:${Env.PORT}`);

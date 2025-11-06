@@ -1,55 +1,63 @@
-import jwt from 'jsonwebtoken';
-import { IAuthenticate, User } from '../model/user.model';
-import { Request, Response, NextFunction } from 'express';
-import { Env } from '../config/env';
-
-
-
-
-
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { User } from "../model/user.model";
+import { verifyToken } from "../services/authUser"; 
+import { ZodError } from "zod";
 
 export const authenticateToken = async (
   req: Request,
   res: Response,
   next: NextFunction
-)=> {
+) => {
   try {
-    const token = req.cookies.jwt;
-    
+    const token = req.cookies?.jwt;
+
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized Access: No token provided'
+        message: "Unauthorized Access: No token provided",
       });
     }
 
-    const decode = jwt.verify(token, Env.JWT_SECRET) as IAuthenticate
-    console.log(decode);
+    const decoded = verifyToken(token);
 
-    const user = await User.exists({ _id: decode.id });
-    
-    if (!user) {
+    const userExists = await User.exists({ _id: decoded._id });
+
+    if (!userExists) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized Access: User not found'
+        message: "Unauthorized Access: User not found",
       });
     }
 
-    req.auth = decode;
+    req.auth = decoded;
     next();
   } catch (error) {
-    console.error('Authentication error:', error);
-    
-    if (error instanceof jwt.JsonWebTokenError) {
-     return res.status(401).json({
+    console.error("Authentication error:", error);
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
         success: false,
-        message: 'Unauthorized Access: Invalid token'
+        message: "Token has expired",
       });
     }
 
-   return res.status(500).json({
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized Access: Invalid token",
+      });
+    }
+
+    if (error instanceof ZodError) {
+      return res.status(401).json({
+        success: false,
+        error: error.issues.map((e) => e.message),
+      });
+    }
+
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error during authentication'
-    });
+      error: "Internal server error during authentication",
+    }); 
   }
-};
+}; 

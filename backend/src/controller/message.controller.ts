@@ -9,7 +9,7 @@ import { getCachedUnreadCount, cacheUnreadCount,getUserSocketId } from '../servi
 
 export const getChats= async (req:Request, res:Response) => {
   try {
-    const userId = req.auth.id;
+    const userId = req.auth._id;
     const chats = await Chat.find({
       type: 'direct',
       participants: userId,
@@ -56,7 +56,7 @@ export const getChats= async (req:Request, res:Response) => {
 export const handleChats= async (req:Request, res:Response) => {
   try {
     const { otherUserId } = req.body;
-    const currentUserId = req.auth?.id;
+    const currentUserId = req?.auth?._id;
 
     if (otherUserId === currentUserId.toString()) {
       return res.status(400).json({ success: false, error: 'Cannot chat with yourself' });
@@ -94,7 +94,7 @@ export const getMessages=async (req:Request, res:Response) => {
     // Verify user is participant
     const chat = await Chat.findOne({
       _id: chatId,
-      participants: req.auth.id,
+      participants: req.auth._id,
     });
 
     if (!chat) {
@@ -131,7 +131,7 @@ export const handleChatDetails=async (req:Request, res:Response) => {
 
     const chat = await Chat.findOne({
       _id: chatId,
-      participants: req.auth.id,
+      participants: req.auth._id,
     })
       .populate('participants', 'username avatar displayName ')
       .populate('lastMessage');
@@ -142,7 +142,7 @@ export const handleChatDetails=async (req:Request, res:Response) => {
 
     const unreadCount = await Message.countDocuments({
       chatId: chat._id,
-      senderId: { $ne: req.auth.id },
+      senderId: { $ne: req.auth._id },
       readAt: null,
     });
 
@@ -158,14 +158,14 @@ export const handleChatDetails=async (req:Request, res:Response) => {
   }
 };
 
-// Delete chat
+
  export const deleteChat=async (req:Request, res:Response) => {
   try {
     const { chatId } = req.params;
 
     const chat = await Chat.findOne({
       _id: chatId,
-      participants: req.auth.id,
+      participants: req.auth._id,
     });
 
     if (!chat) {

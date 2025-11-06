@@ -16,5 +16,15 @@ export const loginForm= z.object({
     password: z.string(),
 });
 
+export const CheckAuthResponseSchema = z.object({
+  _id: z.string(),
+  username: z.string(),
+  displayName: z.string(),
+  email: z.email(),
+  avatar: z.string(),
+});
+
+export type TAuth = z.infer<typeof CheckAuthResponseSchema>;
+export type user=Omit<TAuth,"email">
 export type TRegisterForm = z.infer<typeof registerForm>;
 export type TLoginForm = z.infer<typeof loginForm>;

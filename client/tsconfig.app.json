@@ -23,5 +23,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "src/stores/useAuthStore.ts"]
+  "include": ["src", "src/store/useAuthStore.ts"]
 }

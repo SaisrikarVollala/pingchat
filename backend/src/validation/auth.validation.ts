@@ -18,5 +18,15 @@ export const loginSchema = z.object({
   username: z.string().min(3).max(20),
   password: z.string().min(6),
 });
+
+export const AuthPayloadSchema = z.object({
+  _id: z.string(),
+  username: z.string(),
+  displayName: z.string(),
+  avatar: z.string(),
+  email: z.string(),
+});
+
+export type TAuth =z.infer<typeof AuthPayloadSchema>
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type OtpInput = z.infer<typeof otpSchema>;

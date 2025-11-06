@@ -2,28 +2,27 @@ import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
-import { useAuthStore } from "./stores/useAuthStore";
-import { useChatStore } from "./stores/useChatStore";
+import { useAuthStore } from "./store/useAuthStore";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import HomePage from "./pages/Home";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import Navbar from "./pages/Navbar";
-import ProfilePage from "./pages/UserProfile";
+import Navbar from "./components/Navbar";
+import ProfilePage from "./pages/ProfilePage";
 import VerifyOtp from "./pages/VerifyOtp";
 
 function App() {
-  const { checkAuth, isCheckingAuth, authUser } = useAuthStore();
-  const { connectSocket, disconnectSocket } = useChatStore();
+  const { checkAuth, isCheckingAuth, authUser ,connectSocket,disconnectSocket} =  useAuthStore();
+  
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  // Connect/disconnect socket based on auth state
+
   useEffect(() => {
     if (authUser) {
-      connectSocket(authUser.id);
+      connectSocket();
     } else {
       disconnectSocket();
     }

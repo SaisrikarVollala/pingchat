@@ -74,7 +74,7 @@ type TMessageData = {
 
 
     socket.on(
-      'message:delivered',
+      'message:recivedSucess',
       async (
         data: { messageId: string; senderId: string },
         ack: (res: AckResponse) => void
