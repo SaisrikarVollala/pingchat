@@ -5,7 +5,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { loginForm } from "../lib/auth.validation";
 import type { TLoginForm} from "../lib/auth.validation";
 import { Link } from "react-router-dom";
-import ImagePattern from "../components/ImagePattern";
+import ImagePattern from "../components/skeletons/ImagePattern";
 import { MessageSquare, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Login = () => {

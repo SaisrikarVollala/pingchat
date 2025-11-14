@@ -49,6 +49,7 @@ export const authenticateToken = async (
     }
 
     if (error instanceof ZodError) {
+      console.error("hello")
       return res.status(401).json({
         success: false,
         error: error.issues.map((e) => e.message),

@@ -125,7 +125,7 @@ export async function handleLogin(req: Request, res: Response) {
       httpOnly:true,
       secure:Env.NODE_ENV==="production",
       sameSite:"strict",
-        maxAge:7*24*60*60*1000, 
+      maxAge:7*24*60*60*1000, 
     })
     .status(200)
     .json({success:true, message: "Login successful",token});
@@ -142,7 +142,7 @@ export async function handleLogout(req: Request, res: Response) {
       httpOnly: true,
       secure: Env.NODE_ENV === "production",
       sameSite: "strict",
-    }).json({ message: "Logout successful" });
+    }).json({success:true, message: "Logout successful" });
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   } 
@@ -150,8 +150,8 @@ export async function handleLogout(req: Request, res: Response) {
 
 export async function checkAuth(req:Request, res: Response) {
   try {
-    res.status(200).json({sucess:true,authPayload:req.auth});
+    res.status(200).json({success:true,authPayload:req.auth});
   } catch (err: any) {
-    res.status(400).json({ sucess:false,error: err.message });
+    res.status(400).json({ success:false,error: err.message });
   } 
 }

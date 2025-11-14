@@ -5,7 +5,7 @@ import axiosInstance from "../lib/axios.config";
 import { useAuthStore } from "./useAuthStore";
 import type { user } from "../lib/auth.validation";
 
-interface lastMessageType {
+export interface lastMessageType {
   content: string;
   createdAt: string;
   senderId: string;
@@ -13,16 +13,16 @@ interface lastMessageType {
   deliveredAt: string | null;
 }
 
-interface Chat {
+export interface Chat {
   _id: string;
   participants: user[];
   lastMessage: lastMessageType | null;
   updatedAt: string;
-  unreadCount?: number;
+  unreadCount: number;
   isOnline?: boolean;
 }
 
-interface Message {
+export interface Message {
   _id: string;
   chatId: string;
   content: string;
@@ -32,19 +32,16 @@ interface Message {
   readAt: string | null;
 }
 
-interface TChatStore {
+export interface TChatStore {
   chats: Chat[];
   messages: Record<string, Message[]>;
   currentChat: Chat | null;
   isLoading: boolean;
-  typing: Record<string, boolean>;
 
-  setCurrentChat: (chat: Chat) => void;
+  setCurrentChat: (chat: Chat|null) => void;
   fetchChats: () => Promise<void>;
   fetchMessages: (chatId: string) => Promise<void>;
   sendMessage: (chatId: string, content: string) => void;
-  startTyping: (chatId: string) => void;
-  stopTyping: (chatId: string) => void;
   markAsRead: (chatId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   initSocket: () => void;
@@ -56,18 +53,15 @@ export const useChatStore = create<TChatStore>((set, get) => ({
   messages: {},
   currentChat: null,
   isLoading: false,
-  typing: {},
 
   setCurrentChat: (chat) => set({ currentChat: chat }),
 
-  // Fetch all chats
   fetchChats: async () => {
     set({ isLoading: true });
     try {
       const { data } = await axiosInstance.get("/chats");
       if (!data.success) throw new Error(data.error);
       set({ chats: data.chats });
-      if (data.chats[0] && !get().currentChat) get().setCurrentChat(data.chats[0]);
     } catch {
       toast.error("Failed to load chats");
     } finally {
@@ -75,7 +69,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }
   },
 
-  // Fetch messages for a chat
+  
   fetchMessages: async (chatId: string) => {
     set({ isLoading: true });
     try {
@@ -145,7 +139,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     });
   },
 
-  // Mark messages as read
+  
   markAsRead: (chatId: string) => {
     const socket = useAuthStore.getState().socket;
     if (!socket?.connected) return;
@@ -167,20 +161,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }));
   },
 
-  // Typing
-  startTyping: (chatId: string) => {
-    const socket = useAuthStore.getState().socket;
-    if (!socket?.connected) return;
-    socket.emit("start:typing", { chatId });
-    set((s) => ({ typing: { ...s.typing, [chatId]: true } }));
-  },
-
-  stopTyping: (chatId: string) => {
-    const socket = useAuthStore.getState().socket;
-    if (!socket?.connected) return;
-    socket.emit("end:typing", { chatId });
-    set((s) => ({ typing: { ...s.typing, [chatId]: false } }));
-  },
 
   // Delete chat
   deleteChat: async (chatId: string) => {
@@ -198,12 +178,12 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }
   },
 
-  // Initialize socket listeners (called once after login)
+ 
   initSocket: () => {
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
 
-    // New message from server
+    
     socket.on("message:received", (msg: Message) => {
       const { currentChat } = get();
 
@@ -230,7 +210,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
       }));
 
       // Confirm to server: "I rendered it"
-      socket.emit("message:receivedSuccessfully", {
+      socket.emit("message:receivedSuccess", {
         messageId: msg._id,
         chatId: msg.chatId,
       });
@@ -249,7 +229,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     });
 
     // Other user read messages (blue double tick)
-    socket.on("chat:messages:read", ({ chatId }) => {
+    socket.on("chat:markRead", ({ chatId }) => {
       set((s) => ({
         messages: {
           ...s.messages,
@@ -267,10 +247,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
       }));
     });
 
-    // Typing indicator
-    socket.on("typing:status", ({ chatId, isTyping }) => {
-      set((s) => ({ typing: { ...s.typing, [chatId]: isTyping } }));
-    });
+   
 
     // Online status
     socket.on("user:online", (userId: string) => {
@@ -296,6 +273,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     });
   },
 
-  // Reset on logout
-  reset: () => set({ chats: [], messages: {}, currentChat: null, typing: {} }),
+  
+  reset: () => set({ chats: [], messages: {}, currentChat: null }),
 }));

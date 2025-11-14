@@ -1,100 +1,48 @@
-import { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Loader } from "lucide-react";
-import { Toaster } from "react-hot-toast";
-import { useAuthStore } from "./store/useAuthStore";
+import HomePage from "./pages/HomePage";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import HomePage from "./pages/Home";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import Navbar from "./components/Navbar";
 import ProfilePage from "./pages/ProfilePage";
 import VerifyOtp from "./pages/VerifyOtp";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuthStore } from "./store/useAuthStore";
+import { useEffect } from "react";
+import { Loader } from "lucide-react";
+import { Toaster } from "react-hot-toast";
 
-function App() {
-  const { checkAuth, isCheckingAuth, authUser ,connectSocket,disconnectSocket} =  useAuthStore();
-  
+
+const App = () => {
+  const { authUser, checkAuth, isCheckingAuth, connectSocket, disconnectSocket,isAuthenticated} = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-
+  
   useEffect(() => {
-    if (authUser) {
-      connectSocket();
-    } else {
-      disconnectSocket();
-    }
+    if(authUser) connectSocket();
+    else disconnectSocket();
+  }, [authUser]);
 
-    // Cleanup on unmount
-    return () => {
-      disconnectSocket();
-    };
-  }, [authUser, connectSocket, disconnectSocket]);
-
-  // Show loading state while checking initial auth
-  if (isCheckingAuth && !authUser) {
+  if (isCheckingAuth && !authUser)
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="size-10 animate-spin" />
       </div>
     );
-  }
 
   return (
-    <>
-      {/* Show Navbar only for authenticated routes */}
-      {authUser && <Navbar />}
-
+    <div>
       <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/register"
-          element={!authUser ? <Register /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/verify-otp"
-          element={!authUser ? <VerifyOtp /> : <Navigate to="/" replace />}
-        />
-        <Route
-          path="/login"
-          element={!authUser ? <Login /> : <Navigate to="/" replace />}
-        />
-
-        {/* Protected Routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={isAuthenticated? <HomePage /> : <Navigate to="/login" />} />
+        <Route path="/register" element={!isAuthenticated? <Register /> : <Navigate to="/" />} />
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
+        <Route path="/verify-Otp" element={!isAuthenticated ? <VerifyOtp /> : <Navigate to="/" />} />
+        <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
       </Routes>
 
-      <Toaster
-        position="top-center"
-        reverseOrder={false}
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        }}
-      />
-    </>
+      <Toaster />
+    </div>
   );
-}
+};
 
 export default App;

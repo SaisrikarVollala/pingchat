@@ -1,4 +1,3 @@
-// src/stores/useAuthStore.ts
 import { create } from "zustand";
 import axiosInstance from "../lib/axios.config";
 import { toast } from "react-hot-toast";
@@ -36,18 +35,15 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
   socket: null,
   isConnected: false,
 
-  // Check if user is logged in
   checkAuth: async () => {
     set({ isCheckingAuth: true });
     try {
       const res = await axiosInstance.get("/auth/check");
       const body = res.data;
-
       if (!body.success) throw new Error(body.error || "Not authenticated");
 
       const parsed = CheckAuthResponseSchema.parse(body.authPayload);
       set({ authUser: parsed, isAuthenticated: true });
-      get().connectSocket(); // Connect socket after auth
     } catch (err) {
       const message =
         err instanceof z.ZodError
@@ -60,13 +56,11 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
 
       toast.error(message);
       set({ authUser: null, isAuthenticated: false });
-      get().disconnectSocket();
     } finally {
       set({ isCheckingAuth: false });
     }
   },
 
-  // Sign up
   signUp: async (data) => {
     set({ isSigningUp: true });
     try {
@@ -92,7 +86,7 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
     }
   },
 
-  // Verify OTP
+
   verifyOtp: async (email, otp) => {
     try {
       const res = await axiosInstance.post("/auth/verifyOtp", { email, otp });
@@ -145,9 +139,10 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
   logout: async () => {
     try {
       const res = await axiosInstance.post("/auth/logout");
+      console.log(res)
       const body = res.data;
 
-      if (!body.success) throw new Error(body.error || "Logout failed");
+      if (!body.success) throw new Error(body.error);
 
       toast.success(body.message || "Logged out");
       set({ authUser: null, isAuthenticated: false });
@@ -165,34 +160,33 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
     }
   },
 
-  // Connect WebSocket (cookies sent automatically)
   connectSocket: () => {
-    const { socket, authUser } = get();
-    if (socket?.connected || !authUser) return;
+  const { socket, authUser } = get();
 
-    const newSocket = io(import.meta.env.VITE_API_URL, {
-      transports: ["websocket"],
-      withCredentials: true, // Critical: sends httpOnly cookie
-    });
+  if (socket || !authUser) return; 
 
-    newSocket.on("connect", () => {
-      set({ socket: newSocket, isConnected: true });
-      useChatStore.getState().initSocket(); // Initialize chat listeners
-    });
+  const newSocket = io(import.meta.env.VITE_API_URL, {
+    transports: ["websocket"],
+    withCredentials: true,
+  });
 
-    newSocket.on("disconnect", () => set({ isConnected: false }));
+  newSocket.on("connect", () => {
+    set({ socket: newSocket, isConnected: true });
+    useChatStore.getState().initSocket();
+  });
 
-    newSocket.on("connect_error", (err: Error) => {
-      toast.error(err.message || "Connection failed");
-    });
+  newSocket.on("disconnect", () => {
+    set({ isConnected: false });
+  });
+},
 
-    set({ socket: newSocket });
-  },
 
-  // Disconnect socket
+
   disconnectSocket: () => {
-    const { socket } = get();
-    if (socket) socket.disconnect();
+    const { socket} = get();
+    if (!socket) return;
+    socket.removeAllListeners();
+    socket.disconnect()
     set({ socket: null, isConnected: false });
   },
 }));

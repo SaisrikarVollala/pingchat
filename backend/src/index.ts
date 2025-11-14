@@ -9,6 +9,9 @@ import { redisConnect } from "./config/redisClient";
 import messageRouter from "./router/message.route";
 import "./controller/socket.controller";
 import { authenticateToken } from "./middleware/auth.middleware";
+import { initSocket } from "./controller/socket.controller";
+import { Server } from "socket.io";
+
 
 const app = express();
 export const httpserver = http.createServer(app);
@@ -24,7 +27,14 @@ app.use(cors({
 
 app.use("/api/auth", authRoutes);
 app.use("/api",messageRouter);
-
+const io = new Server(httpserver, {
+  cors: {
+    origin: Env.CLIENT_URL,        
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+initSocket(io);
 httpserver.listen(Env.PORT, () => {
   console.log(`Server running at http://localhost:${Env.PORT}`);
   connectDB();

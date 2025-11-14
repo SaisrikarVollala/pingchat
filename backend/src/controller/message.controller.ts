@@ -2,6 +2,7 @@ import express from 'express';
 import { Chat } from '../model/chats.model';
 import { Message } from '../model/message.model';
 import { Request, Response } from 'express';
+import { User } from '../model/user.model';
 import { authenticateToken } from '../middleware/auth.middleware';
 const router = express.Router();
 import { getCachedUnreadCount, cacheUnreadCount,getUserSocketId } from '../services/messagesCache';
@@ -53,12 +54,20 @@ export const getChats= async (req:Request, res:Response) => {
 };
 
 
-export const handleChats= async (req:Request, res:Response) => {
+export const createChat= async (req:Request, res:Response) => {
   try {
-    const { otherUserId } = req.body;
+    const { otherUserName } = req.body;
     const currentUserId = req?.auth?._id;
+    console.log(currentUserId)
+    const otherUserId = await User.findOne({ username: otherUserName }).select("_id").lean();
 
-    if (otherUserId === currentUserId.toString()) {
+if (!otherUserId) {
+  return res.status(404).json({ message: "User not found" });
+}
+
+
+
+    if (otherUserId.toString() === currentUserId.toString()) {
       return res.status(400).json({ success: false, error: 'Cannot chat with yourself' });
     }
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Eye, EyeOff, Loader2, Lock, Mail, User, MessagesSquare } from "lucide-react";
 import { Link } from "react-router-dom";
-import ImagePattern from "../components/ImagePattern";
+import ImagePattern from "../components/skeletons/ImagePattern";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 

@@ -1,34 +1,66 @@
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
-import { useNavigate } from "react-router-dom";
-import avatar from "../public/avatar.png";
+import { LogOut, MessageSquare } from "lucide-react";
 
-
-export default function Navbar() {
-  const { authUser } = useAuthStore();
-  const navigate = useNavigate();
+const Navbar = () => {
+  const { logout, authUser } = useAuthStore();
 
   return (
-    <nav className="bg-base-200 p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-xl font-bold cursor-pointer" onClick={() => navigate("/")}>
-          PingChat
-        </h1>
-
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">{authUser?.displayName}</span>
-          <div
-            className="w-10 h-10 rounded-full overflow-hidden cursor-pointer border-2 border-base-300 hover:scale-105 transition-transform"
-            onClick={() => navigate("/Profile")}
-          >
-           <img
-  src={authUser?.avatar || avatar}
-  alt="Profile"
-  className="size-10 rounded-full object-cover"
-/>
-
-          </div>
+    <header
+      className="
+        bg-base-100 border-b border-base-300 
+        w-full h-14 flex items-center z-40 
+        px-4
+      "
+    >
+      {/* LEFT — Logo */}
+      <Link
+        to="/"
+        className="flex items-center gap-2.5 hover:opacity-80 transition-all"
+      >
+        <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
+          <MessageSquare className="w-4 h-4 text-primary" />
         </div>
+        <h1 className="text-lg font-bold">PingChat</h1>
+      </Link>
+
+      {/* RIGHT — Profile + Name + Logout */}
+      <div className="ml-auto flex items-center gap-4">
+        {authUser && (
+          <>
+            {/* Profile with name below */}
+            <Link
+              to="/profile"
+              className="flex flex-col items-center justify-center"
+            >
+              <div className="size-8 rounded-full overflow-hidden border border-base-300">
+                <img
+                  src={authUser.avatar}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-[10px] mt-0.5 leading-none whitespace-nowrap">
+                {authUser.displayName}
+              </span>
+            </Link>
+
+            {/* Logout button */}
+            <button
+              onClick={logout}
+              className="
+                flex items-center gap-1 text-sm 
+                hover:opacity-70 transition
+              "
+            >
+              <LogOut className="size-5" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </>
+        )}
       </div>
-    </nav>
+    </header>
   );
-}
+};
+
+export default Navbar;
