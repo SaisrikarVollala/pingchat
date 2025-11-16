@@ -8,12 +8,8 @@ const HomePage = () => {
   const { currentChat } = useChatStore();
 
   return (
-    <div className="h-screen bg-base-200 flex flex-col">
-
-     
+    <div className="h-screen bg-base-200 flex flex-col"> 
         <Navbar />
-      
-
       {/* Full-height container with rounded chat box */}
       <div className="flex-1 flex p-4 overflow-hidden">
         <div className="bg-base-100 rounded-2xl shadow-xl w-full h-full overflow-hidden flex">

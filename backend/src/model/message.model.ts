@@ -11,8 +11,8 @@ export interface IMessage{
   senderId: Types.ObjectId;        
   content: string;
   attachments?: TAttachment[];
-  deliveredAt: Date;
-  readAt: Date;
+  deliveredAt: Date|null;
+  readAt: Date|null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,8 +21,8 @@ const MessageSchema = new Schema<IMessage>(
   {
     chatId: { type: Schema.Types.ObjectId, ref: "Chat", required: true },
     senderId: { type: Schema.Types.ObjectId, required: true },
-    readAt: { type: Date,required:true },
-    deliveredAt: { type: Date ,required:true },
+    readAt: { type: Date},
+    deliveredAt: { type: Date  },
     content: { type: String, required: true },
     attachments: [
       {

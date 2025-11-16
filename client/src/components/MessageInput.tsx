@@ -20,7 +20,7 @@ const MessageInput = () => {
         <input
           type="text"
           value={content}
-          placeholder="Type a message..."
+          placeholder=""
           className="input input-bordered w-full"
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}

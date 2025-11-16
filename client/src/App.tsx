@@ -6,7 +6,7 @@ import VerifyOtp from "./pages/VerifyOtp";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useEffect } from "react";
-import { Loader } from "lucide-react";
+import { Contact, Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
 
@@ -20,7 +20,9 @@ const App = () => {
   
   useEffect(() => {
     if(authUser) connectSocket();
+    
     else disconnectSocket();
+    console.log("usereffect runned")
   }, [authUser]);
 
   if (isCheckingAuth && !authUser)
