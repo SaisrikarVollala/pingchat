@@ -13,36 +13,34 @@ const ChatHeader = () => {
   );
 
   return (
-    <div className="p-3 border-b border-base-300 bg-base-100">
-      <div className="flex items-center justify-between">
-
-        <div className="flex items-center gap-3">
-          <div className="avatar">
-            <div className="size-10 rounded-full">
-              <img
-                src={otherUser?.avatar || "/avatar.png"}
-                alt={otherUser?.displayName || "User"}
-              />
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold">
-              {otherUser?.displayName || otherUser?.username}
-            </h3>
-            <p className="text-sm text-base-content/60">
-              {currentChat.isOnline ? "Online" : "Offline"}
-            </p>
-          </div>
+    <div className="h-16 bg-base-100 border-b border-base-300 flex items-center justify-between px-6">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <img
+            src={otherUser?.avatar || "/avatar.png"}
+            alt={otherUser?.displayName || "User"}
+            className="w-10 h-10 rounded-full object-cover"
+          />
+          {currentChat.isOnline && (
+            <div className="absolute bottom-0 right-0 w-3 h-3 bg-success rounded-full border-2 border-base-100"></div>
+          )}
         </div>
-
-        <button
-          className="btn btn-sm btn-ghost"
-          onClick={() => setCurrentChat(null)}
-        >
-          <X />
-        </button>
+        <div>
+          <h2 className="font-semibold">
+            {otherUser?.displayName || otherUser?.username}
+          </h2>
+          <p className="text-xs text-base-content/60">
+            {currentChat.isOnline ? "online" : "last seen recently"}
+          </p>
+        </div>
       </div>
+
+      <button
+        onClick={() => setCurrentChat(null)}
+        className="p-2 hover:bg-base-200 rounded-full transition"
+      >
+        <X className="w-5 h-5" />
+      </button>
     </div>
   );
 };

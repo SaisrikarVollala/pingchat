@@ -7,13 +7,7 @@ import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { formatMessageTime } from "../lib/formatMessageTime";
 
 const ChatContainer = () => {
-  const {
-    currentChat,
-    messages,
-    fetchMessages,
-    isLoading,
-  } = useChatStore();
-
+  const { currentChat, messages, fetchMessages, isLoading } = useChatStore();
   const { authUser } = useAuthStore();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -47,56 +41,36 @@ const ChatContainer = () => {
     );
 
   return (
-    <div className="flex-1 flex flex-col bg-base-100 h-full">
-
+    <div className="flex-1 flex flex-col bg-base-200 h-full">
       <ChatHeader />
 
       {/* Message list */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3">
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {chatMessages.map((msg) => {
           const isMe = msg.senderId === authUser?._id;
 
           return (
             <div
               key={msg._id}
-              className={`chat ${isMe ? "chat-end" : "chat-start"}`}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
             >
-              {/* Avatar */}
-              <div className="chat-image avatar">
-                <div className="size-10 rounded-full border">
-                  <img
-                    src={
-                      isMe
-                        ? authUser?.avatar || "/avatar.png"
-                        : currentChat.participants.find(
-                            (p) => p._id !== authUser?._id
-                          )?.avatar || "/avatar.png"
-                    }
-                    alt=""
-                  />
+              <div
+                className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                  isMe ? "bg-primary text-white" : "bg-base-100"
+                }`}
+              >
+                <p className="text-sm break-words">{msg.content}</p>
+                <div className="flex items-center justify-end gap-1 mt-1">
+                  <span className="text-xs opacity-70">
+                    {formatMessageTime(msg.createdAt)}
+                  </span>
+                  {isMe && (
+                    <span className="text-xs opacity-70">
+                      {msg.readAt ? "✓✓" : msg.deliveredAt ? "✓✓" : "✓"}
+                    </span>
+                  )}
                 </div>
               </div>
-
-              {/* Time */}
-              <div className="chat-header opacity-70 text-xs mb-1">
-                {formatMessageTime(msg.createdAt)}
-              </div>
-
-              {/* Message bubble */}
-              <div className="chat-bubble bg-primary/20 text-base-content">
-                {msg.content}
-              </div>
-
-              {/* Sent / Delivered / Seen */}
-              {isMe && (
-                <div className="text-[10px] opacity-60 mt-1">
-                  {msg.readAt
-                    ? "Seen"
-                    : msg.deliveredAt
-                    ? "Delivered"
-                    : "Sent"}
-                </div>
-              )}
             </div>
           );
         })}

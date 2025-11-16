@@ -6,24 +6,27 @@ import VerifyOtp from "./pages/VerifyOtp";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useEffect } from "react";
-import { Contact, Loader } from "lucide-react";
+import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
-
 const App = () => {
-  const { authUser, checkAuth, isCheckingAuth, connectSocket, disconnectSocket,isAuthenticated} = useAuthStore();
+  const {
+    authUser,
+    checkAuth,
+    isCheckingAuth,
+    connectSocket,
+    disconnectSocket,
+    isAuthenticated,
+  } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  
   useEffect(() => {
-    if(authUser) connectSocket();
-    
+    if (authUser) connectSocket();
     else disconnectSocket();
-    console.log("usereffect runned")
-  }, [authUser]);
+  }, [authUser, connectSocket, disconnectSocket]);
 
   if (isCheckingAuth && !authUser)
     return (
@@ -35,11 +38,26 @@ const App = () => {
   return (
     <div>
       <Routes>
-        <Route path="/" element={isAuthenticated? <HomePage /> : <Navigate to="/login" />} />
-        <Route path="/register" element={!isAuthenticated? <Register /> : <Navigate to="/" />} />
-        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/" />} />
-        <Route path="/verify-Otp" element={!isAuthenticated ? <VerifyOtp /> : <Navigate to="/" />} />
-        <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
+        <Route
+          path="/"
+          element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/register"
+          element={!isAuthenticated ? <Register /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/login"
+          element={!isAuthenticated ? <Login /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/verify-Otp"
+          element={!isAuthenticated ? <VerifyOtp /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/profile"
+          element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
+        />
       </Routes>
 
       <Toaster />

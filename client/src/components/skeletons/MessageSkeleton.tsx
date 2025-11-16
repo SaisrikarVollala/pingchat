@@ -2,27 +2,15 @@ const MessageSkeleton = () => {
   const skeletonMessages = Array(6).fill(null);
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3">
+    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
       {skeletonMessages.map((_, idx) => (
-        <div key={idx} className={`chat ${idx % 2 === 0 ? "chat-start" : "chat-end"}`}>
-          
-          {/* Avatar */}
-          <div className="chat-image avatar">
-            <div className="size-10 rounded-full">
-              <div className="skeleton w-full h-full rounded-full" />
-            </div>
+        <div
+          key={idx}
+          className={`flex ${idx % 2 === 0 ? "justify-start" : "justify-end"}`}
+        >
+          <div className="max-w-[70%]">
+            <div className="skeleton h-16 w-[250px] rounded-2xl" />
           </div>
-
-          {/* Time */}
-          <div className="chat-header mb-1">
-            <div className="skeleton h-3 w-20" />
-          </div>
-
-          {/* Bubble */}
-          <div className="chat-bubble p-0 bg-transparent">
-            <div className="skeleton h-10 w-[250px] rounded-lg" />
-          </div>
-
         </div>
       ))}
     </div>
