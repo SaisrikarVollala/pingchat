@@ -1,7 +1,8 @@
 import { X } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-import avatar from "../assets/images/avatar.png"
+import avatar from "../assets/images/avatar.png";
+
 const ChatHeader = () => {
   const { currentChat, setCurrentChat } = useChatStore();
   const { authUser } = useAuthStore();
@@ -13,7 +14,7 @@ const ChatHeader = () => {
   );
 
   return (
-    <div className="h-16 bg-base-100 border-b border-base-300 flex items-center justify-between px-6">
+    <div className="h-14 bg-base-100 border-b border-base-300 flex items-center justify-between px-4 flex-shrink-0">
       <div className="flex items-center gap-3">
         <div className="relative">
           <img
@@ -26,11 +27,11 @@ const ChatHeader = () => {
           )}
         </div>
         <div>
-          <h2 className="font-semibold">
+          <h2 className="font-semibold text-sm">
             {otherUser?.displayName || otherUser?.username}
           </h2>
           <p className="text-xs text-base-content/60">
-            {currentChat.isOnline ? "online" : "last seen recently"}
+            {currentChat.isOnline ? "online" : "offline"}
           </p>
         </div>
       </div>
@@ -38,6 +39,7 @@ const ChatHeader = () => {
       <button
         onClick={() => setCurrentChat(null)}
         className="p-2 hover:bg-base-200 rounded-full transition"
+        aria-label="Close chat"
       >
         <X className="w-5 h-5" />
       </button>

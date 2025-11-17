@@ -1,44 +1,59 @@
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { useEffect,useRef } from "react";
+import { useEffect, useRef } from "react";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import MessageBubble from "./MessageBubble";
+
 const ChatContainer = () => {
   const { currentChat, messages, fetchMessages, isLoading } = useChatStore();
   const { authUser } = useAuthStore();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const isFirstLoadRef = useRef(true);
+
   useEffect(() => {
     if (!currentChat?._id) return;
+
+    isFirstLoadRef.current = true;
     fetchMessages(currentChat._id);
   }, [currentChat?._id, fetchMessages]);
+
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    if (bottomRef.current && messages[currentChat?._id || ""]) {
+      if (isFirstLoadRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: "instant" });
+        isFirstLoadRef.current = false;
+      } else {
+        bottomRef.current.scrollIntoView({ behavior: "smooth" });
+      }
     }
-  }, [messages[currentChat?._id || ""]]);
+  }, [messages[currentChat?._id || ""], currentChat?._id]);
+
   if (!currentChat)
     return (
       <div className="flex-1 flex items-center justify-center text-base-content/60">
-        {" "}
-        Select a chat to start messaging{" "}
+        Select a chat to start messaging
       </div>
     );
+
   const chatMessages = messages[currentChat._id] || [];
+
   if (isLoading)
     return (
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {" "}
-        <ChatHeader /> <MessageSkeleton /> <MessageInput />{" "}
+      <div className="flex-1 flex flex-col overflow-hidden h-screen">
+        <ChatHeader />
+        <MessageSkeleton />
+        <MessageInput />
       </div>
     );
+
   return (
-    <div className="flex-1 flex flex-col bg-base-200 h-full">
-      {" "}
-      <ChatHeader /> {/* Message list */}{" "}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
-        {" "}
+    <div className="flex-1 flex flex-col bg-base-200 h-screen overflow-hidden">
+      <ChatHeader />
+
+      {/* Messages Container - Fixed height with overflow */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 min-h-0">
         {chatMessages.map((msg) => {
           const isMe = msg.senderId === authUser?._id;
           return (
@@ -51,11 +66,13 @@ const ChatContainer = () => {
               deliveredAt={msg.deliveredAt}
             />
           );
-        })}{" "}
-        <div ref={bottomRef} />{" "}
-      </div>{" "}
-      <MessageInput />{" "}
+        })}
+        <div ref={bottomRef} />
+      </div>
+
+      <MessageInput />
     </div>
   );
 };
+
 export default ChatContainer;
