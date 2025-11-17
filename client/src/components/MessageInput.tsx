@@ -18,8 +18,7 @@ const MessageInput = () => {
   return (
     <div className="bg-base-100 border-t border-base-300 px-4 py-3">
       <div className="flex items-center gap-2">
-        <input
-          type="text"
+        <textarea
           value={content}
           placeholder="Message"
           className="flex-1 px-4 py-2.5 bg-base-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"

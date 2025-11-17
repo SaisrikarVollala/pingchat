@@ -7,7 +7,7 @@ const HomePage = () => {
   const { currentChat } = useChatStore();
 
   return (
-    <div className="h-screen flex bg-base-200">
+    <div className="h-screen flex bg-base-200 ">
       <Sidebar />
       {!currentChat ? <NoChatSelected /> : <ChatContainer />}
     </div>

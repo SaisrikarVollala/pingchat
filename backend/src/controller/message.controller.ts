@@ -1,31 +1,37 @@
-import express from 'express';
-import { Chat } from '../model/chats.model';
-import { Message } from '../model/message.model';
-import { Request, Response } from 'express';
-import { User } from '../model/user.model';
-import { authenticateToken } from '../middleware/auth.middleware';
+import express from "express";
+import { Chat } from "../model/chats.model";
+import { Message } from "../model/message.model";
+import { Request, Response } from "express";
+import { User } from "../model/user.model";
+import { authenticateToken } from "../middleware/auth.middleware";
 const router = express.Router();
-import { getCachedUnreadCount, cacheUnreadCount,getUserSocketId } from '../services/messagesCache';
+import {
+  getCachedUnreadCount,
+  cacheUnreadCount,
+  getUserSocketId,
+} from "../services/messagesCache";
 
-
-export const getChats= async (req:Request, res:Response) => {
+export const getChats = async (req: Request, res: Response) => {
   try {
     const userId = req.auth._id;
     const chats = await Chat.find({
-      type: 'direct',
+      type: "direct",
       participants: userId,
     })
-      .populate('participants', 'username avatar displayName ')
+      .populate("participants", "username avatar displayName ")
       .populate({
-        path: 'lastMessage',
-        select: 'content createdAt senderId readAt deliveredAt',
+        path: "lastMessage",
+        select: "content createdAt senderId readAt deliveredAt",
       })
       .sort({ updatedAt: -1 });
 
     const chatsWithUnread = await Promise.all(
       chats.map(async (chat) => {
-        let unreadCount = await getCachedUnreadCount(userId.toString(), chat._id.toString());
-        
+        let unreadCount = await getCachedUnreadCount(
+          userId.toString(),
+          chat._id.toString()
+        );
+
         // Fallback to DB if not in cache
         if (unreadCount === null) {
           unreadCount = await Message.countDocuments({
@@ -33,11 +39,19 @@ export const getChats= async (req:Request, res:Response) => {
             senderId: { $ne: userId },
             readAt: null,
           });
-          await cacheUnreadCount(userId.toString(), chat._id.toString(), unreadCount);
+          await cacheUnreadCount(
+            userId.toString(),
+            chat._id.toString(),
+            unreadCount
+          );
         }
 
-        const otherUser = chat.participants.find((p: any) => p._id.toString() !== userId.toString());
-        const isOnline = otherUser ? !!(await getUserSocketId(otherUser._id.toString())) : false;
+        const otherUser = chat.participants.find(
+          (p: any) => p._id.toString() !== userId.toString()
+        );
+        const isOnline = otherUser
+          ? !!(await getUserSocketId(otherUser._id.toString()))
+          : false;
 
         return {
           ...chat.toObject(),
@@ -49,51 +63,61 @@ export const getChats= async (req:Request, res:Response) => {
 
     res.json({ success: true, chats: chatsWithUnread });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch chats' });
+    res.status(500).json({ success: false, error: "Failed to fetch chats" });
   }
 };
 
-
-export const createChat= async (req:Request, res:Response) => {
+export const createChat = async (req: Request, res: Response) => {
   try {
     const { otherUserName } = req.body;
     const currentUserId = req?.auth?._id;
-    console.log(currentUserId)
-    const otherUserId = await User.findOne({ username: otherUserName }).select("_id").lean();
+    console.log(currentUserId);
+    const otherUserId = await User.findOne({ username: otherUserName })
+      .select("_id")
+      .lean();
 
-if (!otherUserId) {
-  return res.status(404).json({ message: "User not found" });
-}
-
-
+    if (!otherUserId) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     if (otherUserId.toString() === currentUserId.toString()) {
-      return res.status(400).json({ success: false, error: 'Cannot chat with yourself' });
+      return res
+        .status(400)
+        .json({ success: false, error: "Cannot chat with yourself" });
     }
 
     let chat = await Chat.findOne({
-      type: 'direct',
+      type: "direct",
       participants: { $all: [currentUserId, otherUserId], $size: 2 },
-    }).populate('participants', 'username avatar displayName ');
+    }).populate("participants", "username avatar displayName ");
 
     if (!chat) {
-        console.log("Creating new chat between", currentUserId, "and", otherUserId);
+      console.log(
+        "Creating new chat between",
+        currentUserId,
+        "and",
+        otherUserId
+      );
       chat = await Chat.create({
-        type: 'direct',
+        type: "direct",
         participants: [currentUserId, otherUserId],
       });
 
-      chat = await Chat.findById(chat._id).populate('participants', 'username avatar displayName ');
+      chat = await Chat.findById(chat._id).populate(
+        "participants",
+        "username avatar displayName "
+      );
     }
 
     res.json({ success: true, chat });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to create/get chat' });
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to create/get chat" });
   }
 };
 
-
-export const getMessages=async (req:Request, res:Response) => {
+export const getMessages = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
     const page = parseInt(req.query.page as string) || 1;
@@ -107,14 +131,14 @@ export const getMessages=async (req:Request, res:Response) => {
     });
 
     if (!chat) {
-      return res.status(404).json({ success: false, error: 'Chat not found' });
+      return res.status(404).json({ success: false, error: "Chat not found" });
     }
 
     const messages = await Message.find({ chatId })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('senderId', 'username avatar displayName ');
+      .populate("senderId", "username avatar displayName ");
 
     const total = await Message.countDocuments({ chatId });
 
@@ -129,12 +153,11 @@ export const getMessages=async (req:Request, res:Response) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch messages' });
+    res.status(500).json({ success: false, error: "Failed to fetch messages" });
   }
 };
 
-
-export const handleChatDetails=async (req:Request, res:Response) => {
+export const handleChatDetails = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
 
@@ -142,11 +165,11 @@ export const handleChatDetails=async (req:Request, res:Response) => {
       _id: chatId,
       participants: req.auth._id,
     })
-      .populate('participants', 'username avatar displayName ')
-      .populate('lastMessage');
+      .populate("participants", "username avatar displayName ")
+      .populate("lastMessage");
 
     if (!chat) {
-      return res.status(404).json({ success: false, error: 'Chat not found' });
+      return res.status(404).json({ success: false, error: "Chat not found" });
     }
 
     const unreadCount = await Message.countDocuments({
@@ -163,12 +186,11 @@ export const handleChatDetails=async (req:Request, res:Response) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch chat' });
+    res.status(500).json({ success: false, error: "Failed to fetch chat" });
   }
 };
 
-
- export const deleteChat=async (req:Request, res:Response) => {
+export const deleteChat = async (req: Request, res: Response) => {
   try {
     const { chatId } = req.params;
 
@@ -178,18 +200,17 @@ export const handleChatDetails=async (req:Request, res:Response) => {
     });
 
     if (!chat) {
-      return res.status(404).json({ success: false, error: 'Chat not found' });
+      return res.status(404).json({ success: false, error: "Chat not found" });
     }
 
     await Message.deleteMany({ chatId });
     await Chat.findByIdAndDelete(chatId);
 
-    res.json({ success: true, message: 'Chat deleted successfully' });
+    res.json({ success: true, message: "Chat deleted successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to delete chat' });
+    res.status(500).json({ success: false, error: "Failed to delete chat" });
   }
 };
-
 
 // router.get('/chats/:chatId/search', authenticateToken, async (req, res) => {
 //   try {
@@ -219,4 +240,22 @@ export const handleChatDetails=async (req:Request, res:Response) => {
 //   }
 // });
 
+export const findUserId= async (req:Request, res:Response) => {
+  try {
+    const { username } = req.body;
 
+    const user = await User.findOne({ username }).select(
+      "_id username avatar displayName"
+    );
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, user,});
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ success: false, error: "Failed to search user" });
+  }
+};

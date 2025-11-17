@@ -5,7 +5,6 @@ import axiosInstance from "../lib/axios.config";
 import { useAuthStore } from "./useAuthStore";
 import type { user } from "../lib/auth.validation";
 
-
 export interface lastMessageType {
   content: string;
   createdAt: string;
@@ -14,7 +13,9 @@ export interface lastMessageType {
   deliveredAt: string | null;
 }
 
-type AckResponse<T> = { success: false; error: string }| { success: true; message: T };
+type AckResponse<T> =
+  | { success: false; error: string }
+  | { success: true; message: T };
 
 type MsgMeta = { senderId: string; chatId: string; messageId: string };
 
@@ -54,7 +55,6 @@ export interface TChatStore {
   reset: () => void;
 }
 
-
 export const useChatStore = create<TChatStore>((set, get) => ({
   chats: [],
   messages: {},
@@ -62,10 +62,10 @@ export const useChatStore = create<TChatStore>((set, get) => ({
   isLoading: false,
   socketInitialized: false,
 
-  //SET CURRENT CHAT 
+  //SET CURRENT CHAT
   setCurrentChat: (chat) => set({ currentChat: chat }),
 
-  //FETCH CHATS 
+  //FETCH CHATS
   fetchChats: async () => {
     set({ isLoading: true });
     try {
@@ -84,7 +84,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }
   },
 
-  //FETCH MESSAGES 
+  //FETCH MESSAGES
   fetchMessages: async (chatId: string) => {
     set({ isLoading: true });
     try {
@@ -228,7 +228,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }));
   },
 
-
   deleteChat: async (chatId: string) => {
     try {
       const { data } = await axiosInstance.delete(`/chats/${chatId}`);
@@ -246,7 +245,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }
   },
 
-
   initSocket: () => {
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
@@ -261,6 +259,9 @@ export const useChatStore = create<TChatStore>((set, get) => ({
 
     /* Incoming message */
     socket.on("message:received", (msg: Message) => {
+      const { currentChat } = get();
+      const isCurrentChat = currentChat?._id === msg.chatId;
+
       set((s) => ({
         messages: {
           ...s.messages,
@@ -273,23 +274,27 @@ export const useChatStore = create<TChatStore>((set, get) => ({
                   ...c,
                   lastMessage: msg,
                   updatedAt: msg.createdAt,
-                  unreadCount:
-                    s.currentChat?._id === msg.chatId
-                      ? c.unreadCount
-                      : c.unreadCount + 1,
+                  unreadCount: isCurrentChat
+                    ? c.unreadCount
+                    : c.unreadCount + 1,
                 }
               : c
           )
           .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)),
       }));
 
+      // Emit received success
       const meta: MsgMeta = {
         messageId: msg._id,
         senderId: msg.senderId,
         chatId: msg.chatId,
       };
-
       socket.emit("message:receivedSuccess", meta);
+
+      // If chat is currently open, mark as read immediately
+      if (isCurrentChat) {
+        get().markAsRead(msg.chatId, msg.senderId);
+      }
     });
 
     /* Delivered */

@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
-
+import avatar from "../assets/images/avatar.png"
 const ChatHeader = () => {
   const { currentChat, setCurrentChat } = useChatStore();
   const { authUser } = useAuthStore();
@@ -17,7 +17,7 @@ const ChatHeader = () => {
       <div className="flex items-center gap-3">
         <div className="relative">
           <img
-            src={otherUser?.avatar || "/avatar.png"}
+            src={otherUser?.avatar || avatar}
             alt={otherUser?.displayName || "User"}
             className="w-10 h-10 rounded-full object-cover"
           />
