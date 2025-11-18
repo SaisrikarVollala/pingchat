@@ -57,7 +57,7 @@ export const useSearchStore = create<SearchState>((set) => ({
       }
 
       set({
-        searchResult: { user: data.user,notFound:false },
+        searchResult: { user: data.user, notFound: false },
         searchLoading: false,
       });
     } catch {
@@ -78,17 +78,26 @@ export const useSearchStore = create<SearchState>((set) => ({
       if (!data.success) return;
 
       const chatStore = useChatStore.getState();
-
       const newChat = data.chat;
 
-      // Append to chat store (no duplicates)
-      const exists = chatStore.chats.some((c) => c._id === newChat._id);
-      if (!exists) chatStore.chats.unshift(newChat);
+      // Check if chat already exists
+      const existingChatIndex = chatStore.chats.findIndex(
+        (c) => c._id === newChat._id
+      );
 
+      if (existingChatIndex === -1) {
+        // New chat - add to the top of the list
+        chatStore.chats.unshift(newChat);
+      } else {
+        // Existing chat - just update it
+        chatStore.chats[existingChatIndex] = newChat;
+      }
+
+      // Set as current chat and fetch messages
       chatStore.setCurrentChat(newChat);
       chatStore.fetchMessages(newChat._id);
 
-      // close search sidebar
+      // Close search sidebar
       set({
         searchMode: false,
         searchResult: null,

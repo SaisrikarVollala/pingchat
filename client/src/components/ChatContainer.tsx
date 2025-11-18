@@ -9,24 +9,18 @@ import MessageBubble from "./MessageBubble";
 const ChatContainer = () => {
   const { currentChat, messages, fetchMessages, isLoading } = useChatStore();
   const { authUser } = useAuthStore();
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const isFirstLoadRef = useRef(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!currentChat?._id) return;
 
-    isFirstLoadRef.current = true;
     fetchMessages(currentChat._id);
   }, [currentChat?._id, fetchMessages]);
 
   useEffect(() => {
-    if (bottomRef.current && messages[currentChat?._id || ""]) {
-      if (isFirstLoadRef.current) {
-        bottomRef.current.scrollIntoView({ behavior: "instant" });
-        isFirstLoadRef.current = false;
-      } else {
-        bottomRef.current.scrollIntoView({ behavior: "smooth" });
-      }
+    // Scroll to bottom instantly without animation when messages change
+    if (messagesEndRef.current && messages[currentChat?._id || ""]) {
+      messagesEndRef.current.scrollIntoView({ behavior: "instant" });
     }
   }, [messages[currentChat?._id || ""], currentChat?._id]);
 
@@ -39,36 +33,31 @@ const ChatContainer = () => {
 
   const chatMessages = messages[currentChat._id] || [];
 
-  if (isLoading)
-    return (
-      <div className="flex-1 flex flex-col overflow-hidden h-screen">
-        <ChatHeader />
-        <MessageSkeleton />
-        <MessageInput />
-      </div>
-    );
-
   return (
     <div className="flex-1 flex flex-col bg-base-200 h-screen overflow-hidden">
       <ChatHeader />
 
-      {/* Messages Container - Fixed height with overflow */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 min-h-0">
-        {chatMessages.map((msg) => {
-          const isMe = msg.senderId === authUser?._id;
-          return (
-            <MessageBubble
-              key={msg._id}
-              content={msg.content}
-              createdAt={msg.createdAt}
-              isMe={isMe}
-              readAt={msg.readAt}
-              deliveredAt={msg.deliveredAt}
-            />
-          );
-        })}
-        <div ref={bottomRef} />
-      </div>
+      {/* Show skeleton while loading, messages once loaded */}
+      {isLoading && chatMessages.length === 0 ? (
+        <MessageSkeleton />
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 min-h-0">
+          {chatMessages.map((msg) => {
+            const isMe = msg.senderId === authUser?._id;
+            return (
+              <MessageBubble
+                key={msg._id}
+                content={msg.content}
+                createdAt={msg.createdAt}
+                isMe={isMe}
+                readAt={msg.readAt}
+                deliveredAt={msg.deliveredAt}
+              />
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
 
       <MessageInput />
     </div>

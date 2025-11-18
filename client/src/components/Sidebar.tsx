@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { useSearchStore } from "../store/useSearchStore";
@@ -20,9 +20,14 @@ const Sidebar = () => {
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [searchInput, setSearchInput] = useState("");
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    fetchChats();
+    // Only fetch once on mount
+    if (!hasFetchedRef.current) {
+      fetchChats();
+      hasFetchedRef.current = true;
+    }
   }, [fetchChats]);
 
   const getOtherUser = useCallback(
@@ -48,7 +53,7 @@ const Sidebar = () => {
     setSearchInput("");
   }, [exitSearchMode]);
 
-  if (isLoading) return <SidebarSkeleton />;
+  if (isLoading && chats.length === 0) return <SidebarSkeleton />;
 
   return (
     <aside className="w-[340px] bg-base-100 border-r border-base-300 flex flex-col h-screen">
