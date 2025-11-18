@@ -71,7 +71,6 @@ export const createChat = async (req: Request, res: Response) => {
   try {
     const { otherUserName } = req.body;
     const currentUserId = req?.auth?._id;
-    console.log(currentUserId);
     const otherUserId = await User.findOne({ username: otherUserName })
       .select("_id")
       .lean();

@@ -1,33 +1,26 @@
 import React, { useState, useEffect } from "react";
 import type { ChangeEvent } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User, Lock, Info, Edit2 } from "lucide-react";
-import avatar from "../assets/images/avatar.png"
+import { Camera, User, Mail, LogOut } from "lucide-react";
+import avatar from "../assets/images/avatar.png";
+import ImagePattern from "../components/skeletons/ImagePattern";
 
 const ProfilePage: React.FC = () => {
-  const { authUser } = useAuthStore();
+  const { authUser, logout } = useAuthStore();
+
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState(authUser?.displayName || "");
-  const [bio, setBio] = useState("Hey there! I’m using PingChat.");
-  const [editingName, setEditingName] = useState(false);
-  const [editingBio, setEditingBio] = useState(false);
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [profileDisplayName, setProfileDisplayName] = useState(
+    authUser?.displayName || ""
+  );
   const [isChanged, setIsChanged] = useState(false);
 
   useEffect(() => {
-    if (
-      displayName !== authUser?.displayName ||
-      selectedImg !== null ||
-      bio !== "Hey there! I’m using PingChat."
-    ) {
+    if (profileDisplayName !== authUser?.displayName || selectedImg !== null) {
       setIsChanged(true);
     } else {
       setIsChanged(false);
     }
-  }, [displayName, bio, selectedImg, authUser]);
+  }, [profileDisplayName, selectedImg, authUser]);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,11 +31,8 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleSaveChanges = () => {
-    setSelectedImg(null);
-    setEditingName(false);
-    setEditingBio(false);
-    setShowPasswordSection(false);
     alert("Changes saved locally! (API update not implemented yet)");
+    setSelectedImg(null);
   };
 
   if (!authUser)
@@ -53,16 +43,21 @@ const ProfilePage: React.FC = () => {
     );
 
   return (
-    <div className="min-h-screen pt-20">
-      <div className="max-w-2xl mx-auto p-4 py-8 space-y-6">
-        <div className="bg-base-200 rounded-xl p-6 space-y-8 shadow-md">
+    <div className="h-screen grid lg:grid-cols-2">
+      {/* LEFT SIDE – PROFILE CARD */}
+      <div className="p-6 sm:p-12 flex justify-center items-center">
+        <div className="w-full max-w-lg bg-base-200 rounded-xl p-6 shadow-md space-y-6">
           {/* Header */}
           <div className="text-center">
-            <h1 className="text-2xl font-semibold text-base-content">Profile</h1>
-            <p className="mt-2 text-base-content/70">Manage your profile details</p>
+            <h1 className="text-2xl font-semibold text-base-content">
+              Profile
+            </h1>
+            <p className="mt-2 text-base-content/70">
+              Manage your profile details
+            </p>
           </div>
 
-          {/* Avatar + Display Name */}
+          {/* Avatar */}
           <div className="flex flex-col items-center gap-3">
             <div className="relative">
               <img
@@ -72,7 +67,7 @@ const ProfilePage: React.FC = () => {
               />
               <label
                 htmlFor="avatar-upload"
-                className="absolute bottom-0 right-0 bg-base-300 hover:bg-base-100 p-2 rounded-full cursor-pointer transition-all duration-200"
+                className="absolute bottom-0 right-0 bg-base-300 hover:bg-base-100 p-2 rounded-full cursor-pointer transition-all"
               >
                 <Camera className="w-5 h-5 text-base-content" />
                 <input
@@ -84,143 +79,74 @@ const ProfilePage: React.FC = () => {
                 />
               </label>
             </div>
+          </div>
 
-            {/* Display Name */}
-            <div className="flex items-center gap-2">
-              {editingName ? (
-                <input
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="bg-transparent border-b border-base-300 focus:outline-none text-xl font-semibold text-center text-base-content"
-                  onBlur={() => setEditingName(false)}
-                  autoFocus
-                />
-              ) : (
-                <>
-                  <span className="text-xl font-semibold text-base-content">
-                    {authUser.displayName || "No Name"}
-                  </span>
-                  <Edit2
-                    className="w-4 h-4 text-base-content/70 cursor-pointer hover:text-base-content transition"
-                    onClick={() => setEditingName(true)}
-                  />
-                </>
-              )}
+          {/* Display Name */}
+          <div className="space-y-1.5">
+            <div className="text-sm text-base-content/70 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Display Name
+            </div>
+            <input
+              type="text"
+              value={profileDisplayName}
+              onChange={(e) => setProfileDisplayName(e.target.value)}
+              className="w-full h-[45px] px-4 bg-base-100 rounded-lg border border-base-300 outline-none text-sm"
+              placeholder="Enter your display name"
+            />
+          </div>
+
+          {/* Username */}
+          <div className="space-y-1.5">
+            <div className="text-sm text-base-content/70 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Username
+            </div>
+            <div className="w-full h-[45px] px-4 flex items-center bg-base-100 rounded-lg border border-base-300 text-sm">
+              {authUser.username}
             </div>
           </div>
 
-          {/* Info Section */}
-          <div className="space-y-6 mt-6">
-            {/* Username */}
-            <div className="space-y-1.5">
-              <div className="text-sm text-base-content/70 flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Username
-              </div>
-              <div className="w-full h-[45px] px-4 flex items-center bg-base-100 rounded-lg border border-base-300 text-sm text-base-content">
-                {authUser.username || "-"}
-              </div>
+          {/* Email */}
+          <div className="space-y-1.5">
+            <div className="text-sm text-base-content/70 flex items-center gap-2">
+              <Mail className="w-4 h-4" />
+              Email Address
             </div>
-
-            {/* Email */}
-            <div className="space-y-1.5">
-              <div className="text-sm text-base-content/70 flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Email Address
-              </div>
-              <div className="w-full h-[45px] px-4 flex items-center bg-base-100 rounded-lg border border-base-300 text-sm text-base-content">
-                user@email.com
-              </div>
+            <div className="w-full h-[45px] px-4 flex items-center bg-base-100 rounded-lg border border-base-300 text-sm">
+              {authUser.email || "No Email"}
             </div>
+          </div>
 
-            {/* Bio */}
-            <div className="space-y-1.5">
-              <div className="text-sm text-base-content/70 flex items-center gap-2">
-                <Info className="w-4 h-4" />
-                Bio
-                {!editingBio && (
-                  <Edit2
-                    className="w-4 h-4 ml-1 text-base-content/70 cursor-pointer hover:text-base-content transition"
-                    onClick={() => setEditingBio(true)}
-                  />
-                )}
-              </div>
-              {editingBio ? (
-                <input
-                  type="text"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  onBlur={() => setEditingBio(false)}
-                  className="w-full h-[45px] px-4 bg-base-100 rounded-lg border border-base-300 outline-none text-sm text-base-content"
-                  placeholder="Write something about yourself..."
-                  autoFocus
-                />
-              ) : (
-                <div className="w-full h-[45px] px-4 flex items-center bg-base-100 rounded-lg border border-base-300 text-sm text-base-content/90">
-                  {bio}
-                </div>
-              )}
-            </div>
-
-            {/* Change Password Section */}
-            <div className="border-t border-base-300 pt-4">
-              <div
-                className="flex items-center justify-between cursor-pointer select-none"
-                onClick={() => setShowPasswordSection(!showPasswordSection)}
+          {/* Save Button */}
+          {isChanged && (
+            <div className="flex justify-center pt-2">
+              <button
+                className="btn btn-primary w-full"
+                onClick={handleSaveChanges}
               >
-                <div className="text-sm text-base-content/70 flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  Change Password
-                </div>
-              </div>
-
-              <div
-                className={`transition-all duration-300 overflow-hidden ${
-                  showPasswordSection ? "max-h-96 mt-4 space-y-3" : "max-h-0"
-                }`}
-              >
-                <input
-                  type="password"
-                  placeholder="Old Password"
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full h-[45px] px-4 bg-base-100 rounded-lg border border-base-300 outline-none text-base-content"
-                />
-                <input
-                  type="password"
-                  placeholder="New Password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full h-[45px] px-4 bg-base-100 rounded-lg border border-base-300 outline-none text-base-content"
-                />
-                <input
-                  type="password"
-                  placeholder="Confirm New Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full h-[45px] px-4 bg-base-100 rounded-lg border border-base-300 outline-none text-base-content"
-                />
-                <button
-                  className="btn btn-primary w-full mt-2"
-                  onClick={handleSaveChanges}
-                >
-                  Update Password
-                </button>
-              </div>
+                Save Changes
+              </button>
             </div>
+          )}
 
-            {/* Save Changes Button */}
-            {isChanged && (
-              <div className="flex justify-center pt-4">
-                <button className="btn btn-primary" onClick={handleSaveChanges}>
-                  Save Changes
-                </button>
-              </div>
-            )}
+          {/* Logout Button */}
+          <div className="pt-4">
+            <button
+              onClick={logout}
+              className="btn btn-outline btn-error w-full flex items-center gap-2"
+            >
+              <LogOut className="w-5 h-5" /> Logout
+            </button>
           </div>
         </div>
       </div>
+
+      {/* RIGHT SIDE – IMAGE PATTERN */}
+      <ImagePattern
+        title="Customize Your Profile"
+        subtitle="Update your name and profile photo to personalize your experience."
+      />
     </div>
   );
 };

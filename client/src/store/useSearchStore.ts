@@ -2,6 +2,7 @@ import { create } from "zustand";
 import axiosInstance from "../lib/axios.config";
 import type { user } from "../lib/auth.validation";
 import { useChatStore } from "./useChatStore";
+import { toast } from "react-hot-toast";
 
 interface SearchResult {
   user?: user;
@@ -48,6 +49,8 @@ export const useSearchStore = create<SearchState>((set) => ({
         username,
       });
 
+      console.log("Search response:", data); // Debug log
+
       if (!data.success) {
         set({
           searchResult: { notFound: true },
@@ -60,7 +63,8 @@ export const useSearchStore = create<SearchState>((set) => ({
         searchResult: { user: data.user, notFound: false },
         searchLoading: false,
       });
-    } catch {
+    } catch (error) {
+      console.error("Search error:", error); // Debug log
       set({
         searchResult: { notFound: true },
         searchLoading: false,
@@ -75,7 +79,10 @@ export const useSearchStore = create<SearchState>((set) => ({
         otherUserName: username,
       });
 
-      if (!data.success) return;
+      if (!data.success) {
+        toast.error("Failed to create chat");
+        return;
+      }
 
       const chatStore = useChatStore.getState();
       const newChat = data.chat;
@@ -102,8 +109,11 @@ export const useSearchStore = create<SearchState>((set) => ({
         searchMode: false,
         searchResult: null,
       });
+
+      toast.success("Chat opened");
     } catch (err) {
-      console.error(err);
+      console.error("Create chat error:", err);
+      toast.error("Failed to open chat");
     }
   },
 }));
