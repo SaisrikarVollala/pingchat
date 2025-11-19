@@ -35,7 +35,7 @@ const App = () => {
     return () => {
       disconnectSocket();
     };
-  }, [isAuthenticated, authUser, connectSocket, disconnectSocket]);
+  }, [authUser]);
 
   if (isCheckingAuth && !authUser)
     return (

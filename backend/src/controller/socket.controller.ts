@@ -15,6 +15,7 @@ import {
   type MessageData,
 } from "../validation/messagevalidation";
 import { z } from "zod";
+import { User } from "../model/user.model";
 
 type AckResponse<T> =
   | { success: false; error: string }
@@ -59,13 +60,13 @@ export const initSocket = (io: Server) => {
       "message:send",
       async (
         data: MessageData,
-        ack: (res: AckResponse<MessageData>) => void
+        ack?: (res: AckResponse<MessageData>) => void
       ) => {
         try {
           const parsedMessage = messageSchema.parse(data);
 
           if (parsedMessage.senderId !== userId) {
-            ack({ success: false, error: "Unauthorized sender" });
+            if (ack) ack({ success: false, error: "Unauthorized sender" });
             return;
           }
 
@@ -76,7 +77,7 @@ export const initSocket = (io: Server) => {
             !chat ||
             !chat.participants.map((p) => p.toString()).includes(userId)
           ) {
-            ack({ success: false, error: "Unauthorized" });
+            if (ack) ack({ success: false, error: "Unauthorized" });
             return;
           }
 
@@ -85,7 +86,7 @@ export const initSocket = (io: Server) => {
             .find((id) => id !== userId)!;
 
           // Create message
-          const Newmessage = await Message.create({
+          const newMessage = await Message.create({
             chatId,
             senderId: userId,
             content: content.trim(),
@@ -94,24 +95,31 @@ export const initSocket = (io: Server) => {
             readAt: null,
           });
 
+          // Populate sender info
+          const populatedMessage = await Message.findById(newMessage._id)
+            .populate("senderId", "username avatar displayName")
+            .lean();
+
           // Update chat's last message
           await Chat.findByIdAndUpdate(chatId, {
-            lastMessage: Newmessage._id,
+            lastMessage: newMessage._id,
             updatedAt: new Date(),
           });
 
-          const messagejson = Newmessage.toJSON();
+          const messagejson = newMessage.toJSON();
 
           // Acknowledge sender
-          ack({
-            success: true,
-            message: messageSchema.parse({
-              ...messagejson,
-              _id: messagejson._id.toString(),
-              chatId: messagejson.chatId.toString(),
-              senderId: messagejson.senderId.toString(),
-            }),
-          });
+          if (ack) {
+            ack({
+              success: true,
+              message: messageSchema.parse({
+                ...messagejson,
+                _id: messagejson._id.toString(),
+                chatId: messagejson.chatId.toString(),
+                senderId: messagejson.senderId.toString(),
+              }),
+            });
+          }
 
           // Try to deliver to receiver
           const receiverSocketId = await getUserSocketId(receiverId);
@@ -129,10 +137,16 @@ export const initSocket = (io: Server) => {
             await incrementUnreadCount(receiverId, chatId);
           }
         } catch (err) {
-          if (err instanceof z.ZodError) {
-            ack({ success: false, error: JSON.stringify(z.treeifyError(err)) });
-          } else {
-            ack({ success: false, error: "Failed to send message" });
+          console.error("message:send error:", err);
+          if (ack) {
+            if (err instanceof z.ZodError) {
+              ack({
+                success: false,
+                error:"Validation failed",
+              });
+            } else {
+              ack({ success: false, error: "Failed to send message" });
+            }
           }
         }
       }

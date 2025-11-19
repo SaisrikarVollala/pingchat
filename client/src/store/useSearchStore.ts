@@ -71,8 +71,6 @@ export const useSearchStore = create<SearchState>((set) => ({
       });
     }
   },
-
-  // WHEN USER CLICKS FOUND USER CARD
   createChatWithUser: async (username) => {
     try {
       const { data } = await axiosInstance.post("/chat/User", {
@@ -84,25 +82,27 @@ export const useSearchStore = create<SearchState>((set) => ({
         return;
       }
 
-      const chatStore = useChatStore.getState();
       const newChat = data.chat;
 
-      // Check if chat already exists
+      // Update chats store
+      const chatStore = useChatStore.getState();
       const existingChatIndex = chatStore.chats.findIndex(
         (c) => c._id === newChat._id
       );
 
       if (existingChatIndex === -1) {
-        // New chat - add to the top of the list
-        chatStore.chats.unshift(newChat);
-      } else {
-        // Existing chat - just update it
-        chatStore.chats[existingChatIndex] = newChat;
+        // New chat - add to the beginning with proper initialization
+        useChatStore.setState((state) => ({
+          chats: [
+            { ...newChat, unreadCount: 0, isOnline: false },
+            ...state.chats,
+          ],
+        }));
       }
 
       // Set as current chat and fetch messages
       chatStore.setCurrentChat(newChat);
-      chatStore.fetchMessages(newChat._id);
+      await chatStore.fetchMessages(newChat._id);
 
       // Close search sidebar
       set({

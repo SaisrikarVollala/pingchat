@@ -9,23 +9,25 @@ import { redisConnect } from "./config/redisClient";
 import messageRouter from "./router/message.route";
 import userRouter from "./router/user.route";
 import "./controller/socket.controller";
-import { authenticateToken } from "./middleware/auth.middleware";
 import { initSocket } from "./controller/socket.controller";
 import { Server } from "socket.io";
 
 const app = express();
 export const httpserver = http.createServer(app);
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: Env.CLIENT_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["Set-Cookie"],
   })
 );
+
+app.use(express.json({ limit: "10mb" })); 
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use("/api/auth", authRoutes);
 app.use("/api", messageRouter);
@@ -39,10 +41,6 @@ const io = new Server(httpserver, {
   },
   pingTimeout: 60000,
   pingInterval: 25000,
-  transports: ["websocket", "polling"],
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
 });
 
 initSocket(io);
