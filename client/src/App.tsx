@@ -19,14 +19,23 @@ const App = () => {
     isAuthenticated,
   } = useAuthStore();
 
+  
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
+
   useEffect(() => {
-    if (authUser) connectSocket();
-    else disconnectSocket();
-  }, [authUser, connectSocket, disconnectSocket]);
+    if (isAuthenticated && authUser) {
+      connectSocket();
+    } else {
+      disconnectSocket();
+    }
+
+    return () => {
+      disconnectSocket();
+    };
+  }, [isAuthenticated, authUser, connectSocket, disconnectSocket]);
 
   if (isCheckingAuth && !authUser)
     return (

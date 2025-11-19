@@ -1,4 +1,3 @@
-// src/stores/useChatStore.ts
 import { create } from "zustand";
 import { toast } from "react-hot-toast";
 import axiosInstance from "../lib/axios.config";
@@ -52,6 +51,7 @@ export interface TChatStore {
   markAsRead: (chatId: string, otherUserId: string) => void;
   deleteChat: (chatId: string) => Promise<void>;
   initSocket: () => void;
+  cleanupSocket: () => void;
   reset: () => void;
 }
 
@@ -62,10 +62,8 @@ export const useChatStore = create<TChatStore>((set, get) => ({
   isLoading: false,
   socketInitialized: false,
 
-  //SET CURRENT CHAT
   setCurrentChat: (chat) => set({ currentChat: chat }),
 
-  //FETCH CHATS
   fetchChats: async () => {
     set({ isLoading: true });
     try {
@@ -84,7 +82,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }
   },
 
-  //FETCH MESSAGES
   fetchMessages: async (chatId: string) => {
     set({ isLoading: true });
     try {
@@ -115,7 +112,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     }
   },
 
-  /* SEND MESSAGE */
   sendMessage: (chatId: string, content: string) => {
     const socket = useAuthStore.getState().socket;
     if (!socket?.connected) return toast.error("Not connected");
@@ -145,7 +141,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
       readAt: null,
     };
 
-    // Optimistic UI update (newest at bottom)
     set((s) => ({
       messages: {
         ...s.messages,
@@ -249,15 +244,9 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
 
-    if (get().socketInitialized) {
-      socket.off("message:received");
-      socket.off("message:delivered");
-      socket.off("chat:messageRead");
-      socket.off("user:online");
-      socket.off("user:offline");
-    }
+    // Remove old listeners before adding new ones
+    get().cleanupSocket();
 
-    /* Incoming message */
     socket.on("message:received", (msg: Message) => {
       const { currentChat } = get();
       const isCurrentChat = currentChat?._id === msg.chatId;
@@ -283,7 +272,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
           .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)),
       }));
 
-      // Emit received success
       const meta: MsgMeta = {
         messageId: msg._id,
         senderId: msg.senderId,
@@ -291,13 +279,11 @@ export const useChatStore = create<TChatStore>((set, get) => ({
       };
       socket.emit("message:receivedSuccess", meta);
 
-      // If chat is currently open, mark as read immediately
       if (isCurrentChat) {
         get().markAsRead(msg.chatId, msg.senderId);
       }
     });
 
-    /* Delivered */
     socket.on(
       "message:delivered",
       ({ messageId, chatId }: { messageId: string; chatId: string }) => {
@@ -329,7 +315,6 @@ export const useChatStore = create<TChatStore>((set, get) => ({
       }));
     });
 
-    /* Online/offline */
     socket.on("user:online", (userId: string) => {
       set((s) => ({
         chats: s.chats.map((c) =>
@@ -353,12 +338,25 @@ export const useChatStore = create<TChatStore>((set, get) => ({
     set({ socketInitialized: true });
   },
 
-  reset: () =>
+  cleanupSocket: () => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.off("message:received");
+    socket.off("message:delivered");
+    socket.off("chat:messageRead");
+    socket.off("user:online");
+    socket.off("user:offline");
+  },
+
+  reset: () => {
+    get().cleanupSocket();
     set({
       chats: [],
       messages: {},
       currentChat: null,
       isLoading: false,
       socketInitialized: false,
-    }),
+    });
+  },
 }));

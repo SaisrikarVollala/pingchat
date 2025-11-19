@@ -14,6 +14,7 @@ interface TAuthStore {
   isCheckingAuth: boolean;
   isLoggingIn: boolean;
   isSigningUp: boolean;
+  isUpdatingProfile: boolean;
   socket: Socket | null;
   isConnected: boolean;
 
@@ -22,6 +23,10 @@ interface TAuthStore {
   signUp: (data: TRegisterForm) => Promise<boolean>;
   verifyOtp: (email: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  updateProfile: (data: {
+    displayName?: string;
+    avatar?: string;
+  }) => Promise<boolean>;
   connectSocket: () => void;
   disconnectSocket: () => void;
 }
@@ -32,6 +37,7 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
   isCheckingAuth: true,
   isLoggingIn: false,
   isSigningUp: false,
+  isUpdatingProfile: false,
   socket: null,
   isConnected: false,
 
@@ -49,12 +55,11 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
         err instanceof z.ZodError
           ? "Invalid server response"
           : err instanceof AxiosError
-          ? err.response?.data?.error || "Auth failed"
-          : err instanceof Error
-          ? err.message
-          : "Authentication failed";
-
-      toast.error(message);
+            ? err.response?.data?.error || "Auth failed"
+            : err instanceof Error
+              ? err.message
+              : "Authentication failed";
+      console.log(message)
       set({ authUser: null, isAuthenticated: false });
     } finally {
       set({ isCheckingAuth: false });
@@ -76,8 +81,8 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
         err instanceof AxiosError
           ? err.response?.data?.error || "Sign up failed"
           : err instanceof Error
-          ? err.message
-          : "Sign up failed";
+            ? err.message
+            : "Sign up failed";
 
       toast.error(message);
       return false;
@@ -85,7 +90,6 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
       set({ isSigningUp: false });
     }
   },
-
 
   verifyOtp: async (email, otp) => {
     try {
@@ -102,15 +106,14 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
         err instanceof AxiosError
           ? err.response?.data?.error || "Verification failed"
           : err instanceof Error
-          ? err.message
-          : "Verification failed";
+            ? err.message
+            : "Verification failed";
 
       toast.error(message);
       return false;
     }
   },
 
-  // Login
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
@@ -126,8 +129,8 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
         err instanceof AxiosError
           ? err.response?.data?.error || "Login failed"
           : err instanceof Error
-          ? err.message
-          : "Login failed";
+            ? err.message
+            : "Login failed";
 
       toast.error(message);
     } finally {
@@ -135,11 +138,9 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
     }
   },
 
-  // Logout
   logout: async () => {
     try {
       const res = await axiosInstance.post("/auth/logout");
-      console.log(res)
       const body = res.data;
 
       if (!body.success) throw new Error(body.error);
@@ -153,40 +154,101 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
         err instanceof AxiosError
           ? err.response?.data?.error || "Logout failed"
           : err instanceof Error
-          ? err.message
-          : "Logout failed";
+            ? err.message
+            : "Logout failed";
 
       toast.error(message);
     }
   },
 
+  updateProfile: async (data) => {
+    set({ isUpdatingProfile: true });
+    try {
+      const res = await axiosInstance.put("/user/profile", data);
+      const body = res.data;
+
+      if (!body.success) throw new Error(body.error || "Update failed");
+
+      set({ authUser: body.user });
+      toast.success(body.message || "Profile updated");
+      return true;
+    } catch (err) {
+      const message =
+        err instanceof AxiosError
+          ? err.response?.data?.error || "Update failed"
+          : err instanceof Error
+            ? err.message
+            : "Update failed";
+
+      toast.error(message);
+      return false;
+    } finally {
+      set({ isUpdatingProfile: false });
+    }
+  },
+
   connectSocket: () => {
-  const { socket, authUser } = get();
+    const { socket, authUser } = get();
 
-  if (socket || !authUser) return; 
+    if (socket?.connected || !authUser) return;
 
-  const newSocket = io(import.meta.env.VITE_API_URL, {
-    transports: ["websocket"],
-    withCredentials: true,
-  });
+    const newSocket = io(
+      import.meta.env.VITE_API_URL || "http://localhost:5000",
+      {
+        transports: ["websocket", "polling"],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+      }
+    );
 
-  newSocket.on("connect", () => {
-    set({ socket: newSocket, isConnected: true });
-    useChatStore.getState().initSocket();
-  });
+    newSocket.on("connect", () => {
+      console.log("Socket connected:", newSocket.id);
+      set({ socket: newSocket, isConnected: true });
+      useChatStore.getState().initSocket();
+    });
 
-  newSocket.on("disconnect", () => {
-    set({ isConnected: false });
-  });
-},
+    newSocket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+      set({ isConnected: false });
+    });
 
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+      set({ isConnected: false });
+    });
 
+    newSocket.on("reconnect", (attemptNumber) => {
+      console.log("Socket reconnected after", attemptNumber, "attempts");
+      set({ isConnected: true });
+      useChatStore.getState().initSocket();
+    });
+
+    newSocket.on("reconnect_attempt", (attemptNumber) => {
+      console.log("Attempting to reconnect:", attemptNumber);
+    });
+
+    newSocket.on("reconnect_error", (error) => {
+      console.error("Reconnection error:", error);
+    });
+
+    newSocket.on("reconnect_failed", () => {
+      console.error("Failed to reconnect");
+      toast.error("Connection failed. Please refresh.");
+    });
+
+    set({ socket: newSocket });
+  },
 
   disconnectSocket: () => {
-    const { socket} = get();
+    const { socket } = get();
     if (!socket) return;
+
     socket.removeAllListeners();
-    socket.disconnect()
+    socket.disconnect();
     set({ socket: null, isConnected: false });
   },
 }));

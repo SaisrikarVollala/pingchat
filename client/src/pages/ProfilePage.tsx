@@ -6,7 +6,7 @@ import avatar from "../assets/images/avatar.png";
 import ImagePattern from "../components/skeletons/ImagePattern";
 
 const ProfilePage: React.FC = () => {
-  const { authUser, logout } = useAuthStore();
+  const { authUser, logout, updateProfile, isUpdatingProfile } = useAuthStore();
 
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [profileDisplayName, setProfileDisplayName] = useState(
@@ -30,9 +30,26 @@ const ProfilePage: React.FC = () => {
     reader.onload = () => setSelectedImg(reader.result as string);
   };
 
-  const handleSaveChanges = () => {
-    alert("Changes saved locally! (API update not implemented yet)");
-    setSelectedImg(null);
+  const handleSaveChanges = async () => {
+    const updateData: { displayName?: string; avatar?: string } = {};
+
+    if (profileDisplayName !== authUser?.displayName) {
+      updateData.displayName = profileDisplayName;
+    }
+
+    if (selectedImg) {
+      updateData.avatar = selectedImg;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return;
+    }
+
+    const success = await updateProfile(updateData);
+    if (success) {
+      setSelectedImg(null);
+      setIsChanged(false);
+    }
   };
 
   if (!authUser)
@@ -124,8 +141,9 @@ const ProfilePage: React.FC = () => {
               <button
                 className="btn btn-primary w-full"
                 onClick={handleSaveChanges}
+                disabled={isUpdatingProfile}
               >
-                Save Changes
+                {isUpdatingProfile ? "Saving..." : "Save Changes"}
               </button>
             </div>
           )}
