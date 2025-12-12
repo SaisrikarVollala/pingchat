@@ -47,7 +47,7 @@ const io = new Server(httpserver, {
 initSocket(io);
 
 httpserver.listen(Env.PORT, () => {
-  console.log(`Server running at http://localhost:${Env.PORT}`);
+  console.log(`Server running at ${Env.PORT}`);
   connectDB();
   redisConnect()
     .then(() => {
