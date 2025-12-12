@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
-
+import dotenv from 'dotenv';
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 const envSchema = z.object({
   DB_URL: z.url({ message: 'DB_URL must be a valid URL' }).min(1, { message: 'DB_URL is required' }),
   PORT: z
