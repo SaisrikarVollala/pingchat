@@ -12,6 +12,10 @@ const envSchema = z.object({
     .default(3000),
   REDIS_URL: z.string().min(1, { message: 'REDIS_URL is required' }),
   REDIS_PASS: z.string().min(1, { message: 'REDIS_PASS is required' }),
+  REDIS_PORT: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .refine((val) => !isNaN(val), { message: 'REDIS_PORT must be a valid number' }),
   EMAIL_USER: z.email({ message: 'EMAIL_USER must be a valid email' }).min(1, { message: 'EMAIL_USER is required' }),
   EMAIL_PASS: z.string().min(1, { message: 'EMAIL_PASS is required' }),
   JWT_SECRET: z.string().min(1, { message: 'JWT_SECRET is required' }),
