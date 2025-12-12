@@ -2,7 +2,7 @@ import HomePage from "./pages/HomePage";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import ProfilePage from "./pages/ProfilePage";
-import VerifyOtp from "./pages/VerifyOtp";
+import VerifyScreen from "./pages/VerifyScreen";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/useAuthStore";
 import { useEffect } from "react";
@@ -19,11 +19,9 @@ const App = () => {
     isAuthenticated,
   } = useAuthStore();
 
-  
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
 
   useEffect(() => {
     if (isAuthenticated && authUser) {
@@ -61,7 +59,7 @@ const App = () => {
         />
         <Route
           path="/verify-Otp"
-          element={!isAuthenticated ? <VerifyOtp /> : <Navigate to="/" />}
+          element={!isAuthenticated ? <VerifyScreen /> : <Navigate to="/" />}
         />
         <Route
           path="/profile"
