@@ -1,7 +1,7 @@
 import { Schema, model, Document} from "mongoose";
 import { TAuth } from "../validation/auth.validation";
 
-export interface IUser extends Document {
+export interface IUser{
  username: string;
  displayName: string;
  avatar: string;

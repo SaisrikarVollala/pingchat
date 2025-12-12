@@ -117,6 +117,10 @@ export const initSocket = (io: Server) => {
                 _id: messagejson._id.toString(),
                 chatId: messagejson.chatId.toString(),
                 senderId: messagejson.senderId.toString(),
+                createdAt: messagejson?.createdAt?.toISOString(),
+                updatedAt: messagejson?.updatedAt?.toISOString(),
+                deliveredAt: messagejson?.deliveredAt?.toISOString?.() ?? null,
+                readAt: messagejson?.readAt?.toISOString?.() ?? null,
               }),
             });
           }
@@ -131,6 +135,10 @@ export const initSocket = (io: Server) => {
                 _id: messagejson._id.toString(),
                 chatId: messagejson.chatId.toString(),
                 senderId: messagejson.senderId.toString(),
+                createdAt: messagejson?.createdAt?.toISOString(),
+                updatedAt: messagejson?.updatedAt?.toISOString(),
+                deliveredAt: messagejson?.deliveredAt?.toISOString?.() ?? null,
+                readAt: messagejson?.readAt?.toISOString?.() ?? null,
               })
             );
           } else {

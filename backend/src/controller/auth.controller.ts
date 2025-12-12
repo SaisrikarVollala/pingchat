@@ -105,35 +105,55 @@ export async function handleVerifyOtp(req: Request, res: Response) {
   }
 }
 
-
 export async function handleLogin(req: Request, res: Response) {
   try {
+    // 1. Validate input
     const { username, password } = loginSchema.parse(req.body);
 
+    // 2. Find user
     const user = await User.findOne({ username });
-
-    if (!user)
-      return res.status(400).json({ message: "Invalid username or password" }); 
-
-    const isPasswordValid=await bcrypt.compare(password,user.passwordHash);
-      if (!isPasswordValid)
-      return res.status(400).json({ message: "Invalid username or password" });
-
-    const token=generateToken(user.toJson());
-
-    res.cookie("jwt",token,{
-      httpOnly:true,
-      secure:Env.NODE_ENV==="production",
-      sameSite:"strict",
-      maxAge:7*24*60*60*1000, 
-    })
-    .status(200)
-    .json({success:true, message: "Login successful",token});
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid username or password",
+      });
     }
-    catch (err: any) {
-      console.error(err);
-    res.status(400).json({ error: err.message });
+
+    // 3. Validate password
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid username or password",
+      });
     }
+
+    // 4. Get safe auth data from schema method
+    const payload = user.toJson(); // TAuth
+    const token =generateToken(payload);
+
+    console.log("Login successful → issuing token");
+
+    // 5. Send cookie and response
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: Env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      user: payload,
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).json({
+      success: false,
+      message:"Internal server error",
+    });
+  }
 }
 
 export async function handleLogout(req: Request, res: Response) {

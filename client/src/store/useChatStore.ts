@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import axiosInstance from "../lib/axios.config";
 import { useAuthStore } from "./useAuthStore";
 import type { user } from "../lib/auth.validation";
+import { formatMessageTime } from "../lib/formatMessageTime";
 
 export interface lastMessageType {
   content: string;
@@ -136,7 +137,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
       chatId,
       content: trimmed,
       senderId: userId,
-      createdAt: new Date().toISOString(),
+      createdAt: formatMessageTime(new Date()),
       deliveredAt: null,
       readAt: null,
     };
@@ -213,7 +214,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
         ...s.messages,
         [chatId]: (s.messages[chatId] || []).map((m) =>
           m.senderId === otherUserId
-            ? { ...m, readAt: new Date().toISOString() }
+            ? { ...m, readAt:formatMessageTime(new Date()) }
             : m
         ),
       },
@@ -292,7 +293,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
             ...s.messages,
             [chatId]: (s.messages[chatId] || []).map((m) =>
               m._id === messageId
-                ? { ...m, deliveredAt: new Date().toISOString() }
+                ? { ...m, deliveredAt: formatMessageTime(new Date()) }
                 : m
             ),
           },
@@ -306,7 +307,7 @@ export const useChatStore = create<TChatStore>((set, get) => ({
           ...s.messages,
           [chatId]: (s.messages[chatId] || []).map((m) => ({
             ...m,
-            readAt: new Date().toISOString(),
+            readAt:formatMessageTime(new Date()),
           })),
         },
         chats: s.chats.map((c) =>

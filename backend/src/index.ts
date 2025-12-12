@@ -19,20 +19,21 @@ app.use(
   cors({
     origin: Env.CLIENT_URL,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-    exposedHeaders: ["Set-Cookie"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
-app.use(express.json({ limit: "10mb" })); 
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true}));
 
 app.use("/api/auth", authRoutes);
 app.use("/api", messageRouter);
 app.use("/api/user", userRouter);
-
+app.get("/", (req: Request, res: Response) => {
+  res.send("API is running...");
+});
 const io = new Server(httpserver, {
   cors: {
     origin: Env.CLIENT_URL,
