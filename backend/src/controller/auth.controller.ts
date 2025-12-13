@@ -93,7 +93,7 @@ export async function handleVerifyOtp(req: Request, res: Response) {
         httpOnly: true,
         secure: Env.NODE_ENV === "production",
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite:"strict"
+        sameSite:"none"
       })
       .json({ 
         success: true,
@@ -138,7 +138,7 @@ export async function handleLogin(req: Request, res: Response) {
     res.cookie("jwt", token, {
       httpOnly: true,
       secure: Env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
