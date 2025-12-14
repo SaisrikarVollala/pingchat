@@ -1,78 +1,100 @@
-import  { Request, Response } from "express";
-import { registerSchema, otpSchema,loginSchema } from "../validation/auth.validation";
-import redisClient  from "../config/redisClient";
+import { Request, Response } from "express";
+import {
+  registerSchema,
+  otpSchema,
+  loginSchema,
+} from "../validation/auth.validation";
+import redisClient from "../config/redisClient";
 import { generateToken } from "../services/authUser";
-import { sendMail } from "../utils/nodemailer";
-import {User } from "../model/user.model";
+import { sendMailAsync } from "../services/nodemailer";
+import { User } from "../model/user.model";
 import type { TAuth } from "../validation/auth.validation";
 import bcrypt from "bcryptjs";
 import { Env } from "../config/env";
 
-
-
 declare global {
   namespace Express {
     interface Request {
-      auth: TAuth
+      auth: TAuth;
     }
   }
 }
-
-
 
 function generateOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-
 export async function handleRegister(req: Request, res: Response) {
   try {
-    const { username, email, password, displayName } = registerSchema.parse(req.body);
+    const { username, email, password, displayName } = registerSchema.parse(
+      req.body
+    );
 
-    const existing = await User.findOne({
-      $or: [{ email }, { username }],
-    });
+    const existingUsername = await User.findOne({ username }).lean();
+    if (existingUsername) {
+      return res.status(400).json({
+        success: false,
+        field: "username",
+        message: "Username already taken",
+      });
+    }
 
-    if (existing) {
-      return res.status(400).json({ message: "User already exists" });
+    const existingEmail = await User.findOne({ email }).lean();
+    if (existingEmail) {
+      return res.status(400).json({
+        success: false,
+        field: "email",
+        message: "Email already registered",
+      });
     }
 
     const otp = generateOtp();
-    const passwordHash = await bcrypt.hash(password, 10); 
+    const passwordHash = await bcrypt.hash(password, 10);
 
     await redisClient.setEx(
       `otp:${email}`,
-      300,
+      300, 
       JSON.stringify({
         otp,
-        userData: { username, email, displayName, passwordHash } 
+        userData: { username, email, displayName, passwordHash },
       })
     );
 
-    await sendMail(email, otp);
-    return res.status(200)
-              .json({ 
-                success: true,
-                message: "OTP sent to email"
-                });
+    res.status(200).json({
+      success: true,
+      message: "OTP sent to your email",
+    });
+
+    sendMailAsync(email, otp).catch((err) => {
+      console.error(`Failed to send OTP to ${email}:`, err);
+    });
   } catch (err: any) {
-    return res.status(400)
-              .json(
-                { success: false,error: err.message });
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Registration failed",
+    });
   }
 }
-
-
 
 export async function handleVerifyOtp(req: Request, res: Response) {
   try {
     const { email, otp } = otpSchema.parse(req.body);
 
     const recordStr = await redisClient.get(`otp:${email}`);
-    if (!recordStr) return res.status(400).json({ success:false,message: "Invalid or expired OTP" });
+    if (!recordStr) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired or invalid",
+      });
+    }
 
     const { otp: savedOtp, userData } = JSON.parse(recordStr);
-    if (savedOtp !== otp) return res.status(400).json({success:false, message: "Invalid OTP" });
+    if (savedOtp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect OTP",
+      });
+    }
 
     const { username, displayName, passwordHash } = userData;
 
@@ -80,7 +102,7 @@ export async function handleVerifyOtp(req: Request, res: Response) {
       username,
       email,
       displayName,
-      passwordHash,        
+      passwordHash,
     });
 
     await redisClient.del(`otp:${email}`);
@@ -93,24 +115,24 @@ export async function handleVerifyOtp(req: Request, res: Response) {
         httpOnly: true,
         secure: Env.NODE_ENV === "production",
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite:"none"
+        sameSite: "none",
       })
-      .json({ 
+      .json({
         success: true,
-        message: "User created successfully" 
+        message: "Account created successfully",
       });
-
-  } catch (err:any) {
-    return res.status(400).json({ error: err.message });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+      message: err.message || "Verification failed",
+    });
   }
 }
 
 export async function handleLogin(req: Request, res: Response) {
   try {
-    // 1. Validate input
     const { username, password } = loginSchema.parse(req.body);
 
-    // 2. Find user
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({
@@ -119,7 +141,6 @@ export async function handleLogin(req: Request, res: Response) {
       });
     }
 
-    // 3. Validate password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -128,18 +149,14 @@ export async function handleLogin(req: Request, res: Response) {
       });
     }
 
-    // 4. Get safe auth data from schema method
-    const payload = user.toJson(); // TAuth
-    const token =generateToken(payload);
+    const payload = user.toJson();
+    const token = generateToken(payload);
 
-    console.log("Login successful → issuing token");
-
-    // 5. Send cookie and response
     res.cookie("jwt", token, {
       httpOnly: true,
       secure: Env.NODE_ENV === "production",
       sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return res.status(200).json({
@@ -147,11 +164,10 @@ export async function handleLogin(req: Request, res: Response) {
       message: "Login successful",
       user: payload,
     });
-  } catch (err) {
-    console.error("Login error:", err);
+  } catch (err: any) {
     return res.status(500).json({
       success: false,
-      message:"Internal server error",
+      message: "Login failed",
     });
   }
 }
@@ -162,16 +178,30 @@ export async function handleLogout(req: Request, res: Response) {
       httpOnly: true,
       secure: Env.NODE_ENV === "production",
       sameSite: "strict",
-    }).json({success:true, message: "Logout successful" });
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
   } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  } 
+    return res.status(400).json({
+      success: false,
+      message: "Logout failed",
+    });
+  }
 }
 
-export async function checkAuth(req:Request, res: Response) {
+export async function checkAuth(req: Request, res: Response) {
   try {
-    res.status(200).json({success:true,authPayload:req.auth});
+    return res.status(200).json({
+      success: true,
+      authPayload: req.auth,
+    });
   } catch (err: any) {
-    res.status(400).json({ success:false,error: err.message });
-  } 
+    return res.status(400).json({
+      success: false,
+      message: "Authentication check failed",
+    });
+  }
 }

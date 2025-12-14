@@ -1,23 +1,9 @@
 import { Env } from "../config/env";
-const nodemailer = require("nodemailer");
+import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.zoho.in",     
-  port: 465,
-  secure: true,            
-  auth: {
-    user: Env.EMAIL_USER  ,
-    pass: Env.EMAIL_PASS    
-  },
-});
-
-export const sendMail = async (email: string, otp: string) => {
-  try {
-    const info = await transporter.sendMail({
-      from: `"PingChat" <${Env.EMAIL_USER}>`,
-      to: email,
-      subject: `OTP Verification for PingChat: ${otp}`,
-      html: `
+const htmlTemplate = (otp: string) => {
+  return `
       <div style="font-family: Arial, sans-serif; background-color: #f4f4f7; padding: 30px;">
         <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
         
@@ -40,13 +26,51 @@ export const sendMail = async (email: string, otp: string) => {
           </div>
         </div>
       </div>
-      `
-    });
+      `;
+};
 
-    console.log("Email sent:", info.messageId);
+const transporter: Transporter = nodemailer.createTransport({
+  host: "smtp.zoho.in",
+  port: 465,
+  secure: true,
+  auth: {
+    user: Env.EMAIL_USER,
+    pass: Env.EMAIL_PASS,
+  },
+  pool: true, 
+  maxConnections: 5, 
+  maxMessages: 100, 
+  rateDelta: 1000, 
+  rateLimit: 5, 
+});
+
+transporter.verify((error) => {
+  if (error) {
+    console.error("SMTP connection error:", error);
+  } else {
+    console.log("SMTP server ready to send emails");
+  }
+});
+
+export const sendMailAsync = async (
+  email: string,
+  otp: string
+): Promise<void> => {
+  try {
+    await transporter.sendMail({
+      from: `"PingChat" <${Env.EMAIL_USER}>`,
+      to: email,
+      subject: `OTP Verification for PingChat: ${otp}`,
+      html: htmlTemplate(otp),
+    });
+    console.log(`OTP sent to ${email}`);
   } catch (err) {
-    console.error("Error sending OTP email:", err);
+    console.error(`Failed to send OTP to ${email}:`, err);
+    throw err;
   }
 };
 
-
+process.on("SIGTERM", () => {
+  transporter.close();
+  console.log("SMTP transporter closed");
+});
