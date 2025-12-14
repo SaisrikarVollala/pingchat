@@ -11,6 +11,7 @@ interface AuthStore {
   isCheckingAuth: boolean;
   isLoggingIn: boolean;
   isSigningUp: boolean;
+  isUpdatingProfile: boolean;
   socket: Socket | null;
   isConnected: boolean;
 
@@ -19,6 +20,10 @@ interface AuthStore {
   signUp: (data: TRegisterForm) => Promise<boolean>;
   verifyOtp: (email: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  updateProfile: (data: {
+    displayName?: string;
+    avatar?: string;
+  }) => Promise<boolean>;
   connectSocket: () => void;
   disconnectSocket: () => void;
 }
@@ -29,6 +34,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isCheckingAuth: true,
   isLoggingIn: false,
   isSigningUp: false,
+  isUpdatingProfile: false,
   socket: null,
   isConnected: false,
 
@@ -59,7 +65,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       toast.error(res.message || "Failed");
       return false;
     } catch (err) {
-      toast.error(err.response?.data?.message || "Sign up failed");
+      toast.error("Sign up failed");
+      console.error(err);
       return false;
     } finally {
       set({ isSigningUp: false });
@@ -96,7 +103,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         toast.error(res.message || "Login failed");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
+      toast.error("Login failed");
+      console.error(err);
     } finally {
       set({ isLoggingIn: false });
     }
@@ -111,6 +119,35 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       toast.success("Logged out");
     } catch {
       toast.error("Logout failed");
+    }
+  },
+
+  updateProfile: async (data: { displayName?: string; avatar?: string }) => {
+    set({ isUpdatingProfile: true });
+
+    try {
+      const res = await axiosInstance.put("/user/profile", data);
+
+      if (res.data.success) {
+        set({
+          authUser: {
+            ...get().authUser!,
+            ...res.data.user, // backend returns the updated user object
+          },
+        });
+
+        toast.success(res.data.message || "Profile updated successfully!");
+        return true;
+      } else {
+        toast.error(res.data.error || "Failed to update profile");
+        return false;
+      }
+    } catch (err) {
+      toast.error("Failed to update profile");
+      console.error("Update profile error:", err);
+      return false;
+    } finally {
+      set({ isUpdatingProfile: false });
     }
   },
 
