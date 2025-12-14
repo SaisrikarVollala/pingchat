@@ -1,249 +1,128 @@
-import { registerForm } from "../lib/auth.validation";
-import type { TRegisterForm } from "../lib/auth.validation";
-import { useState, useCallback } from "react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
+import { registerForm } from "../lib/auth.validation";
+import { toast } from "react-hot-toast";
 import {
   Eye,
   EyeOff,
   Loader2,
-  Lock,
-  Mail,
   User,
+  Mail,
+  Lock,
   MessagesSquare,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
 import ImagePattern from "../components/skeletons/ImagePattern";
-import { toast } from "react-hot-toast";
 
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState<TRegisterForm>({
+  const [formData, setFormData] = useState({
     username: "",
     displayName: "",
     email: "",
     password: "",
   });
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof TRegisterForm, string>>
-  >({});
 
   const { signUp, isSigningUp } = useAuthStore();
   const navigate = useNavigate();
 
-  const validateField = useCallback(
-    (field: keyof TRegisterForm, value: string) => {
-      const fieldSchema = registerForm.shape[field];
-      const result = fieldSchema.safeParse(value);
-
-      if (!result.success) {
-        setErrors((prev) => ({
-          ...prev,
-          [field]: result.error,
-        }));
-        return false;
-      } else {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-        return true;
-      }
-    },
-    []
-  );
-
-  const handleChange = useCallback(
-    (field: keyof TRegisterForm, value: string) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-      if (errors[field]) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
-    },
-    [errors]
-  );
-
-  const handleBlur = useCallback(
-    (field: keyof TRegisterForm) => {
-      validateField(field, formData[field]);
-    },
-    [formData, validateField]
-  );
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const emptyFields: string[] = [];
-    (Object.keys(formData) as Array<keyof TRegisterForm>).forEach((key) => {
-      if (!formData[key].trim()) {
-        emptyFields.push(key);
-      }
-    });
-
-    if (emptyFields.length > 0) {
-      toast.error(`Please fill in: ${emptyFields.join(", ")}`);
+    const result = registerForm.safeParse(formData);
+    if (!result.success) {
+      const firstError = Object.values(
+        result.error.flatten().fieldErrors
+      )[0]?.[0];
+      toast.error(firstError || "Please fix the errors above");
       return;
     }
 
-    const validation = registerForm.safeParse(formData);
-
-    if (!validation.success) {
-      const fieldErrors = validation.error.flatten().fieldErrors;
-      const firstError = Object.values(fieldErrors)[0]?.[0];
-      toast.error(firstError || "Please check all fields");
-
-      const newErrors: Partial<Record<keyof TRegisterForm, string>> = {};
-      Object.keys(fieldErrors).forEach((key) => {
-        newErrors[key as keyof TRegisterForm] =
-          fieldErrors[key as keyof TRegisterForm]?.[0];
-      });
-      setErrors(newErrors);
-      return;
-    }
-
-    const success = await signUp(validation.data);
+    const success = await signUp(result.data);
     if (success) {
-      navigate("/verify-otp", {
-        state: { email: formData.email },
-      });
+      navigate("/verify-otp", { state: { email: formData.email } });
     }
   };
 
+  const handleChange =
+    (field: keyof typeof formData) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    };
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="flex flex-col justify-center items-center p-6 sm:p-12">
+      <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
-          <div className="text-center mb-8">
-            <div className="flex flex-col items-center gap-2 group">
-              <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+          <div className="text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <MessagesSquare className="size-6 text-primary" />
               </div>
-              <h1 className="text-2xl font-bold mt-2">Create Account</h1>
-              <p className="text-base-content/60">
-                Get started with your free account
-              </p>
+              <h1 className="text-2xl font-bold">Create Account</h1>
+              <p className="text-base-content/60">Join us today</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Username</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="size-5 text-base-content/40" />
-                </div>
-                <input
-                  type="text"
-                  className={`input input-bordered w-full pl-10 ${errors.username ? "input-error" : ""}`}
-                  placeholder="johndoe123"
-                  value={formData.username}
-                  onChange={(e) => handleChange("username", e.target.value)}
-                  onBlur={() => handleBlur("username")}
-                  disabled={isSigningUp}
-                />
-              </div>
-              {errors.username && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {errors.username}
-                  </span>
-                </label>
-              )}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="relative">
+              <User className="absolute left-3 top-3.5 size-5 text-base-content/40" />
+              <input
+                type="text"
+                placeholder="Username"
+                className="input input-bordered w-full pl-10"
+                value={formData.username}
+                onChange={handleChange("username")}
+                disabled={isSigningUp}
+              />
             </div>
 
-            {}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Display Name</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="size-5 text-base-content/40" />
-                </div>
-                <input
-                  type="text"
-                  className={`input input-bordered w-full pl-10 ${errors.displayName ? "input-error" : ""}`}
-                  placeholder="John Doe"
-                  value={formData.displayName}
-                  onChange={(e) => handleChange("displayName", e.target.value)}
-                  onBlur={() => handleBlur("displayName")}
-                  disabled={isSigningUp}
-                />
-              </div>
-              {errors.displayName && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {errors.displayName}
-                  </span>
-                </label>
-              )}
+            <div className="relative">
+              <User className="absolute left-3 top-3.5 size-5 text-base-content/40" />
+              <input
+                type="text"
+                placeholder="Display Name"
+                className="input input-bordered w-full pl-10"
+                value={formData.displayName}
+                onChange={handleChange("displayName")}
+                disabled={isSigningUp}
+              />
             </div>
 
-            {}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Email</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="size-5 text-base-content/40" />
-                </div>
-                <input
-                  type="email"
-                  className={`input input-bordered w-full pl-10 ${errors.email ? "input-error" : ""}`}
-                  placeholder="you@example.com"
-                  value={formData.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                  onBlur={() => handleBlur("email")}
-                  disabled={isSigningUp}
-                />
-              </div>
-              {errors.email && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {errors.email}
-                  </span>
-                </label>
-              )}
+            <div className="relative">
+              <Mail className="absolute left-3 top-3.5 size-5 text-base-content/40" />
+              <input
+                type="email"
+                placeholder="Email"
+                className="input input-bordered w-full pl-10"
+                value={formData.email}
+                onChange={handleChange("email")}
+                disabled={isSigningUp}
+              />
             </div>
 
-            {}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">Password</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="size-5 text-base-content/40" />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className={`input input-bordered w-full pl-10 ${errors.password ? "input-error" : ""}`}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => handleChange("password", e.target.value)}
-                  onBlur={() => handleBlur("password")}
-                  disabled={isSigningUp}
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isSigningUp}
-                >
-                  {showPassword ? (
-                    <EyeOff className="size-5 text-base-content/40" />
-                  ) : (
-                    <Eye className="size-5 text-base-content/40" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {errors.password}
-                  </span>
-                </label>
-              )}
+            <div className="relative">
+              <Lock className="absolute left-3 top-3.5 size-5 text-base-content/40" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="input input-bordered w-full pl-10 pr-12"
+                value={formData.password}
+                onChange={handleChange("password")}
+                disabled={isSigningUp}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3.5"
+                disabled={isSigningUp}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-5" />
+                ) : (
+                  <Eye className="size-5" />
+                )}
+              </button>
             </div>
 
             <button
@@ -253,8 +132,7 @@ const Register = () => {
             >
               {isSigningUp ? (
                 <>
-                  <Loader2 className="size-5 animate-spin" />
-                  Creating Account...
+                  <Loader2 className="size-5 animate-spin" /> Creating...
                 </>
               ) : (
                 "Create Account"
@@ -262,20 +140,18 @@ const Register = () => {
             </button>
           </form>
 
-          <div className="text-center">
-            <p className="text-base-content/60">
-              Already have an account?{" "}
-              <Link to="/login" className="link link-primary">
-                Login
-              </Link>
-            </p>
-          </div>
+          <p className="text-center text-sm text-base-content/60">
+            Already have an account?{" "}
+            <Link to="/login" className="link link-primary">
+              Login
+            </Link>
+          </p>
         </div>
       </div>
 
       <ImagePattern
         title="Join our community"
-        subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
+        subtitle="Connect, chat, and share moments with friends."
       />
     </div>
   );

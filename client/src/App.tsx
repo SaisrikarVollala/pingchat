@@ -1,22 +1,23 @@
-import HomePage from "./pages/HomePage";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
-import ProfilePage from "./pages/ProfilePage";
-import VerifyScreen from "./pages/VerifyScreen";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuthStore } from "./store/useAuthStore";
 import { useEffect } from "react";
+import { useAuthStore } from "./store/useAuthStore";
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
+import HomePage from "./pages/HomePage";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import VerifyScreen from "./pages/VerifyScreen";
+import ProfilePage from "./pages/ProfilePage";
+
 const App = () => {
   const {
-    authUser,
     checkAuth,
     isCheckingAuth,
+    isAuthenticated,
+    authUser,
     connectSocket,
     disconnectSocket,
-    isAuthenticated,
   } = useAuthStore();
 
   useEffect(() => {
@@ -24,51 +25,44 @@ const App = () => {
   }, [checkAuth]);
 
   useEffect(() => {
-    if (isAuthenticated && authUser) {
-      connectSocket();
-    } else {
-      disconnectSocket();
-    }
+    if (isAuthenticated && authUser) connectSocket();
+    else disconnectSocket();
+  }, [isAuthenticated, authUser]);
 
-    return () => {
-      disconnectSocket();
-    };
-  }, [authUser]);
-
-  if (isCheckingAuth && !authUser)
+  if (isCheckingAuth) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="h-screen flex items-center justify-center">
         <Loader className="size-10 animate-spin" />
       </div>
     );
+  }
 
   return (
-    <div>
+    <>
       <Routes>
         <Route
           path="/"
           element={isAuthenticated ? <HomePage /> : <Navigate to="/login" />}
         />
         <Route
-          path="/register"
-          element={!isAuthenticated ? <Register /> : <Navigate to="/" />}
-        />
-        <Route
           path="/login"
-          element={!isAuthenticated ? <Login /> : <Navigate to="/" />}
+          element={isAuthenticated ? <Navigate to="/" /> : <Login />}
         />
         <Route
-          path="/verify-Otp"
-          element={!isAuthenticated ? <VerifyScreen /> : <Navigate to="/" />}
+          path="/register"
+          element={isAuthenticated ? <Navigate to="/" /> : <Register />}
+        />
+        <Route
+          path="/verify-otp"
+          element={isAuthenticated ? <Navigate to="/" /> : <VerifyScreen />}
         />
         <Route
           path="/profile"
           element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />}
         />
       </Routes>
-
-      <Toaster />
-    </div>
+      <Toaster position="top-center" />
+    </>
   );
 };
 

@@ -4,16 +4,13 @@ import { toast } from "react-hot-toast";
 import { io, Socket } from "socket.io-client";
 import { useChatStore } from "./useChatStore";
 import type { TLoginForm, TRegisterForm, TAuth } from "../lib/auth.validation";
-import { CheckAuthResponseSchema } from "../lib/auth.validation";
-import { AxiosError } from "axios";
 
-interface TAuthStore {
+interface AuthStore {
   authUser: TAuth | null;
   isAuthenticated: boolean;
   isCheckingAuth: boolean;
   isLoggingIn: boolean;
   isSigningUp: boolean;
-  isUpdatingProfile: boolean;
   socket: Socket | null;
   isConnected: boolean;
 
@@ -22,43 +19,30 @@ interface TAuthStore {
   signUp: (data: TRegisterForm) => Promise<boolean>;
   verifyOtp: (email: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  updateProfile: (data: {
-    displayName?: string;
-    avatar?: string;
-  }) => Promise<boolean>;
   connectSocket: () => void;
   disconnectSocket: () => void;
 }
 
-export const useAuthStore = create<TAuthStore>()((set, get) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   authUser: null,
   isAuthenticated: false,
   isCheckingAuth: true,
   isLoggingIn: false,
   isSigningUp: false,
-  isUpdatingProfile: false,
   socket: null,
   isConnected: false,
 
   checkAuth: async () => {
-    const { isAuthenticated, isCheckingAuth } = get();
-    if (isAuthenticated || isCheckingAuth) return;
-
     set({ isCheckingAuth: true });
     try {
-      const res = await axiosInstance.get("/auth/check");
-      const body = res.data;
-
-      if (!body.success) {
+      const { data } = await axiosInstance.get("/auth/check");
+      if (data.success && data.authPayload) {
+        set({ authUser: data.authPayload, isAuthenticated: true });
+      } else {
         set({ authUser: null, isAuthenticated: false });
-        return;
       }
-
-      const parsed = CheckAuthResponseSchema.parse(body.authPayload);
-      set({ authUser: parsed, isAuthenticated: true });
-    } catch (err) {
+    } catch {
       set({ authUser: null, isAuthenticated: false });
-      console.error("Auth check failed:", err);
     } finally {
       set({ isCheckingAuth: false });
     }
@@ -67,23 +51,15 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
   signUp: async (data) => {
     set({ isSigningUp: true });
     try {
-      const res = await axiosInstance.post("/auth/register", data);
-      const body = res.data;
-
-      if (!body.success) {
-        toast.error(body.error || "Sign up failed");
-        return false;
+      const { data: res } = await axiosInstance.post("/auth/register", data);
+      if (res.success) {
+        toast.success(res.message || "OTP sent!");
+        return true;
       }
-
-      toast.success(body.message || "OTP sent to your email");
-      return true;
+      toast.error(res.message || "Failed");
+      return false;
     } catch (err) {
-      const message =
-        err instanceof AxiosError
-          ? err.response?.data?.error || "Sign up failed"
-          : "Sign up failed";
-
-      toast.error(message);
+      toast.error(err.response?.data?.message || "Sign up failed");
       return false;
     } finally {
       set({ isSigningUp: false });
@@ -92,26 +68,19 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
 
   verifyOtp: async (email, otp) => {
     try {
-      const res = await axiosInstance.post("/auth/verifyOtp", { email, otp });
-      const body = res.data;
-
-      if (!body.success) {
-        toast.error(body.error || "Invalid OTP");
-        return false;
+      const { data } = await axiosInstance.post("/auth/verifyOtp", {
+        email,
+        otp,
+      });
+      if (data.success) {
+        toast.success("Account verified!");
+        await get().checkAuth();
+        return true;
       }
-
-      toast.success(body.message || "Email verified!");
-
-      set({ isCheckingAuth: false, isAuthenticated: true });
-      await get().checkAuth();
-      return true;
-    } catch (err) {
-      const message =
-        err instanceof AxiosError
-          ? err.response?.data?.error || "Verification failed"
-          : "Verification failed";
-
-      toast.error(message);
+      toast.error(data.message || "Invalid OTP");
+      return false;
+    } catch {
+      toast.error("Verification failed");
       return false;
     }
   },
@@ -119,25 +88,15 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post("/auth/login", data);
-      const body = res.data;
-
-      if (!body.success) {
-        toast.error(body.error || "Login failed");
-        return;
+      const { data: res } = await axiosInstance.post("/auth/login", data);
+      if (res.success) {
+        toast.success("Logged in!");
+        await get().checkAuth();
+      } else {
+        toast.error(res.message || "Login failed");
       }
-
-      toast.success(body.message || "Logged in successfully");
-
-      set({ isCheckingAuth: false, isAuthenticated: true });
-      await get().checkAuth();
     } catch (err) {
-      const message =
-        err instanceof AxiosError
-          ? err.response?.data?.error || "Login failed"
-          : "Login failed";
-
-      toast.error(message);
+      toast.error(err.response?.data?.message || "Login failed");
     } finally {
       set({ isLoggingIn: false });
     }
@@ -146,64 +105,24 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
-
       set({ authUser: null, isAuthenticated: false });
       get().disconnectSocket();
       useChatStore.getState().reset();
-
-      toast.success("Logged out successfully");
-    } catch (err) {
-      const message =
-        err instanceof AxiosError
-          ? err.response?.data?.error || "Logout failed"
-          : "Logout failed";
-
-      toast.error(message);
-    }
-  },
-
-  updateProfile: async (data) => {
-    set({ isUpdatingProfile: true });
-    try {
-      const res = await axiosInstance.put("/user/profile", data);
-      const body = res.data;
-
-      if (!body.success) {
-        toast.error(body.error || "Update failed");
-        return false;
-      }
-
-      set({ authUser: body.user });
-      toast.success(body.message || "Profile updated");
-      return true;
-    } catch (err) {
-      const message =
-        err instanceof AxiosError
-          ? err.response?.data?.error || "Update failed"
-          : "Update failed";
-
-      toast.error(message);
-      return false;
-    } finally {
-      set({ isUpdatingProfile: false });
+      toast.success("Logged out");
+    } catch {
+      toast.error("Logout failed");
     }
   },
 
   connectSocket: () => {
-    const { socket, authUser, isConnected } = get();
-
-    if ((socket?.connected && isConnected) || !authUser) return;
+    const { authUser, socket, isConnected } = get();
+    if (!authUser || (socket?.connected && isConnected)) return;
 
     const newSocket = io(
       import.meta.env.VITE_API_URL || "http://localhost:5000",
       {
-        transports: ["websocket", "polling"],
         withCredentials: true,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000,
+        transports: ["websocket", "polling"],
       }
     );
 
@@ -212,28 +131,14 @@ export const useAuthStore = create<TAuthStore>()((set, get) => ({
       useChatStore.getState().initSocket();
     });
 
-    newSocket.on("disconnect", () => {
-      set({ isConnected: false });
-    });
-
-    newSocket.on("connect_error", () => {
-      set({ isConnected: false });
-    });
-
-    newSocket.on("reconnect", () => {
-      set({ isConnected: true });
-      useChatStore.getState().initSocket();
-    });
+    newSocket.on("disconnect", () => set({ isConnected: false }));
 
     set({ socket: newSocket });
   },
 
   disconnectSocket: () => {
     const { socket } = get();
-    if (!socket) return;
-
-    socket.removeAllListeners();
-    socket.disconnect();
+    socket?.disconnect();
     set({ socket: null, isConnected: false });
   },
 }));

@@ -34,7 +34,6 @@ export async function handleRegister(req: Request, res: Response) {
     if (existingUsername) {
       return res.status(400).json({
         success: false,
-        field: "username",
         message: "Username already taken",
       });
     }
@@ -43,7 +42,6 @@ export async function handleRegister(req: Request, res: Response) {
     if (existingEmail) {
       return res.status(400).json({
         success: false,
-        field: "email",
         message: "Email already registered",
       });
     }
@@ -115,7 +113,7 @@ export async function handleVerifyOtp(req: Request, res: Response) {
         httpOnly: true,
         secure: Env.NODE_ENV === "production",
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        sameSite: "none",
+        sameSite: Env.NODE_ENV === "production" ? "none" : "strict",
       })
       .json({
         success: true,
@@ -151,13 +149,14 @@ export async function handleLogin(req: Request, res: Response) {
 
     const payload = user.toJson();
     const token = generateToken(payload);
-
+    console.log("Generated JWT token for user:", username);
     res.cookie("jwt", token, {
       httpOnly: true,
       secure: Env.NODE_ENV === "production",
-      sameSite: "none",
+      sameSite: Env.NODE_ENV==="production"?"none":"strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    console.log("JWT cookie set for user:", username);
 
     return res.status(200).json({
       success: true,
@@ -177,9 +176,9 @@ export async function handleLogout(req: Request, res: Response) {
     res.clearCookie("jwt", {
       httpOnly: true,
       secure: Env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite:Env.NODE_ENV==="production"?"none":"strict",
     });
-
+    console.log("JWT cookie cleared");
     return res.status(200).json({
       success: true,
       message: "Logged out successfully",
