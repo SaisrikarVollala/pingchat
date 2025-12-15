@@ -1,6 +1,10 @@
 import { Request, Response } from "express";
 import { User } from "../model/user.model";
 import { z } from "zod";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+} from "../config/cloudinary.config";
 
 const updateProfileSchema = z.object({
   displayName: z.string().min(2).max(50).optional(),
@@ -19,9 +23,38 @@ export const updateProfile = async (req: Request, res: Response) => {
       });
     }
 
+    const updateData: { displayName?: string; avatar?: string } = {};
+
+    // Handle display name update
+    if (validatedData.displayName) {
+      updateData.displayName = validatedData.displayName;
+    }
+
+    // Handle avatar update
+    if (validatedData.avatar) {
+      // Get current user to check for old avatar
+      const currentUser = await User.findById(userId);
+
+      // Upload new avatar to Cloudinary
+      const cloudinaryUrl = await uploadToCloudinary(
+        validatedData.avatar,
+        "pingchat/avatars"
+      );
+
+      updateData.avatar = cloudinaryUrl;
+
+      // Delete old avatar from Cloudinary if it exists and is a Cloudinary URL
+      if (
+        currentUser?.avatar &&
+        currentUser.avatar.includes("cloudinary.com")
+      ) {
+        await deleteFromCloudinary(currentUser.avatar);
+      }
+    }
+
     const user = await User.findByIdAndUpdate(
       userId,
-      { $set: validatedData },
+      { $set: updateData },
       { new: true, runValidators: true }
     );
 
@@ -48,7 +81,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     console.error("Update profile error:", err);
     return res.status(500).json({
       success: false,
-      error: "Failed to update profile",
+      error: err.message || "Failed to update profile",
     });
   }
 };

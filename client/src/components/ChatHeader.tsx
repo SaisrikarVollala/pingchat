@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 import avatar from "../assets/images/avatar.png";
@@ -16,6 +16,15 @@ const ChatHeader = () => {
   return (
     <div className="h-14 bg-base-100 border-b border-base-300 flex items-center justify-between px-4 flex-shrink-0">
       <div className="flex items-center gap-3">
+        {/* Back button - Only visible on mobile */}
+        <button
+          onClick={() => setCurrentChat(null)}
+          className="md:hidden p-2 hover:bg-base-200 rounded-full transition"
+          aria-label="Back to chats"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
         <div className="relative">
           <img
             src={otherUser?.avatar || avatar}
@@ -36,9 +45,10 @@ const ChatHeader = () => {
         </div>
       </div>
 
+      {/* Close button - Only visible on desktop */}
       <button
         onClick={() => setCurrentChat(null)}
-        className="p-2 hover:bg-base-200 rounded-full transition"
+        className="hidden md:block p-2 hover:bg-base-200 rounded-full transition"
         aria-label="Close chat"
       >
         <X className="w-5 h-5" />

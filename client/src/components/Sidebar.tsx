@@ -73,10 +73,10 @@ const Sidebar = () => {
   if (isLoading && chats.length === 0) return <SidebarSkeleton />;
 
   return (
-    <aside className="w-[340px] bg-base-100 border-r border-base-300 flex flex-col h-screen">
-      {}
+    <aside className="w-full md:w-[340px] bg-base-100 border-r border-base-300 flex flex-col h-screen">
+      {/* Header */}
       <div className="h-14 flex items-center justify-between px-5 border-b border-base-300">
-        {}
+        {/* Profile Avatar */}
         <Link to="/profile">
           <img
             src={authUser?.avatar || avatar}
@@ -93,11 +93,11 @@ const Sidebar = () => {
           <span className="text-sm font-semibold tracking-wide">PINGCHAT</span>
         </div>
 
-        {}
+        {/* Spacer */}
         <div className="w-9" />
       </div>
 
-      {}
+      {/* Search Bar */}
       <div className="px-3 py-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/40" />
@@ -131,7 +131,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {}
+      {/* Chat List */}
       <div className="flex-1 overflow-y-auto py-2">
         {searchMode ? (
           <SearchContainer />

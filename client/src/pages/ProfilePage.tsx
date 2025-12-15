@@ -4,6 +4,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Camera, User, Mail, LogOut } from "lucide-react";
 import avatar from "../assets/images/avatar.png";
 import ImagePattern from "../components/skeletons/ImagePattern";
+import { toast } from "react-hot-toast";
 
 const ProfilePage: React.FC = () => {
   const { authUser, logout, updateProfile, isUpdatingProfile } = useAuthStore();
@@ -22,12 +23,79 @@ const ProfilePage: React.FC = () => {
     }
   }, [profileDisplayName, selectedImg, authUser]);
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          // Set max dimensions
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // Convert to base64 with compression
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(compressedBase64);
+        };
+
+        img.onerror = () => reject(new Error("Failed to load image"));
+      };
+
+      reader.onerror = () => reject(new Error("Failed to read file"));
+    });
+  };
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => setSelectedImg(reader.result as string);
+
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    try {
+      const compressedImage = await compressImage(file);
+      setSelectedImg(compressedImage);
+    } catch (error) {
+      console.error("Image compression error:", error);
+      toast.error("Failed to process image");
+    }
   };
 
   const handleSaveChanges = async () => {
@@ -93,9 +161,15 @@ const ProfilePage: React.FC = () => {
                   className="hidden"
                   accept="image/*"
                   onChange={handleImageUpload}
+                  disabled={isUpdatingProfile}
                 />
               </label>
             </div>
+            {selectedImg && (
+              <p className="text-xs text-base-content/60">
+                Image ready to upload
+              </p>
+            )}
           </div>
 
           {/* Display Name */}
@@ -110,6 +184,7 @@ const ProfilePage: React.FC = () => {
               onChange={(e) => setProfileDisplayName(e.target.value)}
               className="w-full h-[45px] px-4 bg-base-100 rounded-lg border border-base-300 outline-none text-sm"
               placeholder="Enter your display name"
+              disabled={isUpdatingProfile}
             />
           </div>
 

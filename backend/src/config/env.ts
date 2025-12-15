@@ -10,7 +10,7 @@ const envSchema = z.object({
     .url({ message: "DB_URL must be a valid URL" })
     .min(1, { message: "DB_URL is required" }),
   PORT: z.preprocess(
-    (val) => val || process.env.PORT ,
+    (val) => val || process.env.PORT || "3000",
     z
       .string()
       .transform((val) => parseInt(val, 10))
@@ -29,12 +29,24 @@ const envSchema = z.object({
   CLIENT_URL: z
     .url({ message: "CLIENT_URL must be a valid URL" })
     .min(1, { message: "CLIENT_URL is required" }),
+  Cloudinary_Cloud_Name: z
+    .string()
+    .min(1, { message: "Cloudinary_Cloud_Name is required" }),
+  Cloudinary_API_Key: z
+    .string()
+    .min(1, { message: "Cloudinary_API_Key is required" }),
+  Cloudinary_API_Secret: z
+    .string()
+    .min(1, { message: "Cloudinary_API_Secret is required" }),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  console.error("Invalid environment variables:", z.treeifyError(parsedEnv.error));
+  console.error(
+    "Invalid environment variables:",
+    z.treeifyError(parsedEnv.error)
+  );
   process.exit(1);
 }
 

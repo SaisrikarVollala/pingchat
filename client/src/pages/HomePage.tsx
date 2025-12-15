@@ -8,8 +8,17 @@ const HomePage = () => {
 
   return (
     <div className="h-screen flex bg-base-200 overflow-hidden">
-      <Sidebar />
-      {!currentChat ? <NoChatSelected /> : <ChatContainer />}
+      {/* Sidebar - Hidden on mobile when chat is selected */}
+      <div
+        className={`${currentChat ? "hidden md:flex" : "flex"} w-full md:w-auto`}
+      >
+        <Sidebar />
+      </div>
+
+      {/* Chat Container - Hidden on mobile when no chat selected */}
+      <div className={`${currentChat ? "flex" : "hidden md:flex"} flex-1`}>
+        {!currentChat ? <NoChatSelected /> : <ChatContainer />}
+      </div>
     </div>
   );
 };
