@@ -10,7 +10,7 @@ const envSchema = z.object({
     .url({ message: "DB_URL must be a valid URL" })
     .min(1, { message: "DB_URL is required" }),
   PORT: z.preprocess(
-    (val) => val || process.env.PORT || "3000",
+    (val) => val || process.env.PORT ,
     z
       .string()
       .transform((val) => parseInt(val, 10))
@@ -24,15 +24,12 @@ const envSchema = z.object({
     .refine((val) => !isNaN(val), {
       message: "REDIS_PORT must be a valid number",
     }),
-  EMAIL_USER: z
-    .email({ message: "EMAIL_USER must be a valid email" })
-    .min(1, { message: "EMAIL_USER is required" }),
-  EMAIL_PASS: z.string().min(1, { message: "EMAIL_PASS is required" }),
   JWT_SECRET: z.string().min(1, { message: "JWT_SECRET is required" }),
   NODE_ENV: z.enum(["development", "production"]).default("development"),
   CLIENT_URL: z
     .url({ message: "CLIENT_URL must be a valid URL" })
     .min(1, { message: "CLIENT_URL is required" }),
+  RESEND_API_KEY: z.string().min(1, { message: "RESEND_API_KEY is required" }),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

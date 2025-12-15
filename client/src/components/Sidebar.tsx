@@ -21,9 +21,9 @@ const Sidebar = () => {
 
   const [searchInput, setSearchInput] = useState("");
   const hasFetchedRef = useRef(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Only fetch once on mount
     if (!hasFetchedRef.current) {
       fetchChats();
       hasFetchedRef.current = true;
@@ -36,17 +36,35 @@ const Sidebar = () => {
     [authUser?._id]
   );
 
-  const handleSearchKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
-        const value = searchInput.trim();
-        if (value) {
-          searchUser(value);
-        }
+  // Debounced search - triggers automatically as user types
+  useEffect(() => {
+    if (!searchMode) return;
+
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    const trimmed = searchInput.trim();
+
+    // If search is empty, clear results
+    if (!trimmed) {
+      searchUser("");
+      return;
+    }
+
+    // Set new timer for debounced search
+    debounceTimerRef.current = setTimeout(() => {
+      searchUser(trimmed);
+    }, 300); // 300ms delay
+
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-    },
-    [searchInput, searchUser]
-  );
+    };
+  }, [searchInput, searchMode, searchUser]);
 
   const handleExitSearch = useCallback(() => {
     exitSearchMode();
@@ -79,7 +97,6 @@ const Sidebar = () => {
             onChange={(e) => setSearchInput(e.target.value)}
             className="w-full pl-9 pr-8 py-2.5 bg-base-200 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
             onFocus={enterSearchMode}
-            onKeyDown={handleSearchKeyDown}
           />
 
           {searchMode && (

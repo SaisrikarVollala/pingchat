@@ -1,6 +1,7 @@
-import * as nodemailer from "nodemailer";
-import type { Transport } from "nodemailer";
+import { Resend } from "resend";
 import { Env } from "../config/env";
+
+const resend = new Resend(Env.RESEND_API_KEY);
 
 const htmlTemplate = (otp: string): string => `
   <div style="font-family:Arial,sans-serif;padding:24px">
@@ -11,47 +12,20 @@ const htmlTemplate = (otp: string): string => `
   </div>
 `;
 
-
-
-const transporter = nodemailer.createTransport( {
-  host: "smtp.zoho.in",
-  port: 587,
-  secure: false, 
-  auth: {
-    user: Env.EMAIL_USER,
-    pass: Env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: true,
-  },
-  connectionTimeout: 10_000,
-  greetingTimeout: 10_000,
-  socketTimeout: 10_000,
-});
-
-transporter.verify((err) => {
-  if (err) {
-    console.error("SMTP verification failed:", err);
-  } else {
-    console.log("SMTP server ready");
-  }
-});
-
 export const sendMailAsync = async (
   email: string,
   otp: string
 ): Promise<void> => {
-  await transporter.sendMail({
-    from: `"PingChat" <${Env.EMAIL_USER}>`,
-    to: email,
-    subject: "PingChat Verification Code",
-    html: htmlTemplate(otp),
-  });
-};
+  try {
+    await resend.emails.send({
+      from: "PingChat <onboarding@resend.dev>",
+      to: email,
+      subject: "PingChat Verification Code",
+      html: htmlTemplate(otp),
+    });
 
-const shutdown = () => {
-  transporter.close();
+    console.log("OTP email sent to", email);
+  } catch (error) {
+    console.error("Email send failed:", error);
+  }
 };
-
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);

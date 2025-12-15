@@ -239,20 +239,57 @@ export const deleteChat = async (req: Request, res: Response) => {
 //   }
 // });
 
-export const findUserId= async (req:Request, res:Response) => {
+// export const findUserId = async (req: Request, res: Response) => {
+//   try {
+//     const { username } = req.body;
+
+//     const user = await User.findOne({ username }).select(
+//       "_id username avatar displayName"
+//     );
+
+//     if (!user) {
+//       return res.json({ success: false, message: "User not found" });
+//     }
+
+//     return res.status(200).json({ success: true, user });
+//   } catch (err) {
+//     return res
+//       .status(500)
+//       .json({ success: false, error: "Failed to search user" });
+//   }
+// };
+const escapeRegex = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+export const findUserId = async (req: Request, res: Response) => {
   try {
     const { username } = req.body;
 
-    const user = await User.findOne({ username }).select(
-      "_id username avatar displayName"
-    );
-
-    if (!user) {
-      return res.json({ success: false, message: "User not found" });
+    if (!username || username.trim().length === 0) {
+      return res.json({ success: false, message: "Search query is required" });
     }
 
-    return res.status(200).json({ success: true, user,});
+    const safeUsername = escapeRegex(username.trim());
+
+    const users = await User.find({
+      username: { $regex: `^${safeUsername}`, $options: "i" },
+      _id: { $ne: req.auth._id },
+    })
+      .select("_id username avatar displayName")
+      .limit(10)
+      .lean();
+
+    if (!users.length) {
+      return res.json({ success: false, message: "No users found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      users,
+      count: users.length,
+    });
   } catch (err) {
+    console.error("Search user error:", err);
     return res
       .status(500)
       .json({ success: false, error: "Failed to search user" });

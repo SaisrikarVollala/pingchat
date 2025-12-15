@@ -33,5 +33,5 @@ userSchema.methods.toJson = function (): TAuth {
     email: this.email
   };
 }
-
+userSchema.index({ username: 1 });
 export const User = model<IUser>("User", userSchema);

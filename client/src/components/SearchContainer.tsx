@@ -1,53 +1,53 @@
 import { useSearchStore } from "../store/useSearchStore";
+import avatar from "../assets/images/avatar.png";
 
 const SearchContainer = () => {
   const { searchLoading, searchResult, createChatWithUser } = useSearchStore();
 
-  const foundUser = searchResult?.user ?? null;
+  const foundUsers = searchResult?.users ?? [];
   const notFound = searchResult?.notFound;
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {/* Searching */}
       {searchLoading && (
         <div className="p-4 text-center opacity-70">Searching…</div>
       )}
 
-      {/* No results */}
-      {!searchLoading && notFound && (
-        <div className="p-4 text-center text-error">User not found</div>
+
+      {!searchLoading && notFound && foundUsers.length === 0 && (
+        <div className="p-4 text-center text-error">No users found</div>
       )}
 
-      {/* User is null or undefined */}
-      {!searchLoading && searchResult && !foundUser && !notFound && (
-        <div className="p-4 text-center opacity-70">User not available</div>
+
+      {!searchLoading && foundUsers.length > 0 && (
+        <div className="divide-y divide-base-300">
+          {foundUsers.map((user) => (
+            <button
+              key={user._id}
+              onClick={() => createChatWithUser(user.username)}
+              className="w-full p-4 flex items-center gap-3 hover:bg-base-200 transition"
+            >
+              <img
+                src={user.avatar || avatar}
+                className="w-12 h-12 rounded-full border border-base-300 object-cover flex-shrink-0"
+                alt={user.displayName}
+              />
+
+              <div className="flex flex-col text-left flex-1 min-w-0">
+                <h3 className="font-semibold truncate">
+                  {user.displayName || user.username}
+                </h3>
+                <p className="text-sm opacity-70 truncate">@{user.username}</p>
+              </div>
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* Valid user */}
-      {foundUser && (
-        <button
-          onClick={() => createChatWithUser(foundUser.username)}
-          className="w-full p-4 flex items-center gap-3 hover:bg-base-200 transition"
-        >
-          <img
-            src={foundUser.avatar || "/avatar.png"}
-            className="w-12 h-12 rounded-full border border-base-300 object-cover"
-            alt=""
-          />
 
-          <div className="flex flex-col text-left">
-            <h3 className="font-semibold">
-              {foundUser.displayName || foundUser.username}
-            </h3>
-            <p className="text-sm opacity-70">@{foundUser.username}</p>
-          </div>
-        </button>
-      )}
-
-      {/* Default prompt */}
       {!searchLoading && !searchResult && (
         <div className="p-4 text-center opacity-70">
-          Search using your friend's username
+          Search for users by their username
         </div>
       )}
     </div>

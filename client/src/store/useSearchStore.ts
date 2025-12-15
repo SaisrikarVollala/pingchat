@@ -5,12 +5,12 @@ import { useChatStore } from "./useChatStore";
 import { toast } from "react-hot-toast";
 
 interface SearchResult {
-  user?: user;
+  users: user[]; 
   notFound: boolean;
 }
 
 interface SearchState {
-  searchMode: boolean; // Search sidebar active
+  searchMode: boolean;
   searchLoading: boolean;
   searchResult: SearchResult | null;
 
@@ -25,7 +25,6 @@ export const useSearchStore = create<SearchState>((set) => ({
   searchLoading: false,
   searchResult: null,
 
-  // ON CLICK SEARCH BAR
   enterSearchMode: () => {
     set({
       searchMode: true,
@@ -40,37 +39,40 @@ export const useSearchStore = create<SearchState>((set) => ({
     });
   },
 
-  // SEARCH USER
   searchUser: async (username) => {
+    if (!username || username.trim().length === 0) {
+      set({ searchResult: null });
+      return;
+    }
+
     set({ searchLoading: true });
 
     try {
-      const { data } = await axiosInstance.post("/chat/searchUser", {
-        username,
+      const { data } = await axiosInstance.post("/users/search", {
+        username: username.trim(),
       });
 
-      console.log("Search response:", data); // Debug log
-
-      if (!data.success) {
+      if (!data.success || !data.users || data.users.length === 0) {
         set({
-          searchResult: { notFound: true },
+          searchResult: { users: [], notFound: true },
           searchLoading: false,
         });
         return;
       }
 
       set({
-        searchResult: { user: data.user, notFound: false },
+        searchResult: { users: data.users, notFound: false },
         searchLoading: false,
       });
     } catch (error) {
-      console.error("Search error:", error); // Debug log
+      console.error("Search error:", error);
       set({
-        searchResult: { notFound: true },
+        searchResult: { users: [], notFound: true },
         searchLoading: false,
       });
     }
   },
+
   createChatWithUser: async (username) => {
     try {
       const { data } = await axiosInstance.post("/chat/User", {
@@ -84,14 +86,12 @@ export const useSearchStore = create<SearchState>((set) => ({
 
       const newChat = data.chat;
 
-      // Update chats store
       const chatStore = useChatStore.getState();
       const existingChatIndex = chatStore.chats.findIndex(
         (c) => c._id === newChat._id
       );
 
       if (existingChatIndex === -1) {
-        // New chat - add to the beginning with proper initialization
         useChatStore.setState((state) => ({
           chats: [
             { ...newChat, unreadCount: 0, isOnline: false },
@@ -100,11 +100,9 @@ export const useSearchStore = create<SearchState>((set) => ({
         }));
       }
 
-      // Set as current chat and fetch messages
       chatStore.setCurrentChat(newChat);
       await chatStore.fetchMessages(newChat._id);
 
-      // Close search sidebar
       set({
         searchMode: false,
         searchResult: null,
