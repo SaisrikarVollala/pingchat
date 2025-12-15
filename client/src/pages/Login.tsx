@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { z } from "zod";
 import { useAuthStore } from "../store/useAuthStore";
 import { loginForm } from "../lib/auth.validation";
 import { toast } from "react-hot-toast";
@@ -16,11 +17,7 @@ const Login = () => {
 
     const result = loginForm.safeParse(formData);
     if (!result.success) {
-      toast.error(
-        result.error.flatten().fieldErrors.username?.[0] ||
-          result.error.flatten().fieldErrors.password?.[0] ||
-          "Invalid input"
-      );
+      toast.error(z.treeifyError(result.error).errors[0] || "Invalid input");
       return;
     }
 

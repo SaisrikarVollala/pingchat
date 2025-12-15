@@ -6,7 +6,6 @@ import {
 } from "../validation/auth.validation";
 import redisClient from "../config/redisClient";
 import { generateToken } from "../services/authUser";
-import { sendMailAsync } from "../services/nodemailer";
 import { User } from "../model/user.model";
 import type { TAuth } from "../validation/auth.validation";
 import bcrypt from "bcryptjs";
@@ -46,65 +45,14 @@ export async function handleRegister(req: Request, res: Response) {
       });
     }
 
-    const otp = generateOtp();
     const passwordHash = await bcrypt.hash(password, 10);
-
-    await redisClient.setEx(
-      `otp:${email}`,
-      300, 
-      JSON.stringify({
-        otp,
-        userData: { username, email, displayName, passwordHash },
-      })
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "OTP sent to your email",
-    });
-
-    sendMailAsync(email, otp).catch((err) => {
-      console.error(`Failed to send OTP to ${email}:`, err);
-    });
-  } catch (err: any) {
-    return res.status(400).json({
-      success: false,
-      message: err.message || "Registration failed",
-    });
-  }
-}
-
-export async function handleVerifyOtp(req: Request, res: Response) {
-  try {
-    const { email, otp } = otpSchema.parse(req.body);
-
-    const recordStr = await redisClient.get(`otp:${email}`);
-    if (!recordStr) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP expired or invalid",
-      });
-    }
-
-    const { otp: savedOtp, userData } = JSON.parse(recordStr);
-    if (savedOtp !== otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect OTP",
-      });
-    }
-
-    const { username, displayName, passwordHash } = userData;
-
     const user = await User.create({
       username,
       email,
       displayName,
       passwordHash,
     });
-
-    await redisClient.del(`otp:${email}`);
-
+    
     const token = generateToken(user.toJson());
 
     return res
@@ -119,10 +67,12 @@ export async function handleVerifyOtp(req: Request, res: Response) {
         success: true,
         message: "Account created successfully",
       });
+
+    
   } catch (err: any) {
     return res.status(400).json({
       success: false,
-      message: err.message || "Verification failed",
+      message: err.message || "Registration failed",
     });
   }
 }

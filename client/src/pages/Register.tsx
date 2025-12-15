@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { registerForm } from "../lib/auth.validation";
 import { toast } from "react-hot-toast";
+import { z } from "zod";
 import {
   Eye,
   EyeOff,
@@ -31,16 +32,14 @@ const Register = () => {
 
     const result = registerForm.safeParse(formData);
     if (!result.success) {
-      const firstError = Object.values(
-        result.error.flatten().fieldErrors
-      )[0]?.[0];
-      toast.error(firstError || "Please fix the errors above");
+      toast.error("Please fill all fields correctly.");
+      console.log("Validation errors:", z.treeifyError(result.error));
       return;
     }
 
     const success = await signUp(result.data);
     if (success) {
-      navigate("/verify-otp", { state: { email: formData.email } });
+      navigate("/");
     }
   };
 

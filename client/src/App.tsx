@@ -7,7 +7,6 @@ import { Toaster } from "react-hot-toast";
 import HomePage from "./pages/HomePage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import VerifyScreen from "./pages/VerifyScreen";
 import ProfilePage from "./pages/ProfilePage";
 
 const App = () => {
@@ -51,10 +50,6 @@ const App = () => {
         <Route
           path="/register"
           element={isAuthenticated ? <Navigate to="/" /> : <Register />}
-        />
-        <Route
-          path="/verify-otp"
-          element={isAuthenticated ? <Navigate to="/" /> : <VerifyScreen />}
         />
         <Route
           path="/profile"

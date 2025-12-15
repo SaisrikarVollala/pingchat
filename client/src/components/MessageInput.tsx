@@ -44,7 +44,7 @@ const MessageInput = () => {
           ref={textareaRef}
           value={content}
           placeholder="Type a message..."
-          className="flex-1 px-4 py-2 bg-base-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-none max-h-[120px] overflow-y-auto"
+          className="flex-1 px-4 py-2 bg-base-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm resize-none max-h-[120px] overflow-y-auto"
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}

@@ -1,12 +1,11 @@
 import express from "express";
-import { handleRegister,handleVerifyOtp, handleLogin, handleLogout, checkAuth } from "../controller/auth.controller";
+import { handleRegister, handleLogin, handleLogout, checkAuth } from "../controller/auth.controller";
 import { authenticateToken } from "../middleware/auth.middleware";
 
 
 const authRouter = express.Router();
 
 authRouter.post("/register", handleRegister);
-authRouter.post("/verifyOtp",handleVerifyOtp);
 authRouter.post("/login",handleLogin);
 authRouter.post("/logout",handleLogout);
 authRouter.get("/check",authenticateToken,checkAuth);

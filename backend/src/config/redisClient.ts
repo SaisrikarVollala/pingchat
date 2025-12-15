@@ -10,20 +10,11 @@ const redisClient = createClient({
     }
 });
 
-// const redisClient = createClient({
-//   socket: {
-//     host: '127.0.0.1',
-//     port: 6379
-//   }
-// });
-
-
 
 redisClient.on('error', err => console.log('Redis Client Error', err));
 
 export const redisConnect=async()=>{ 
     await redisClient.connect();
-    await redisClient.SADD("user:1", "hello")
 }
 
 export default redisClient;

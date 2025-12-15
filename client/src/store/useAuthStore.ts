@@ -18,7 +18,6 @@ interface AuthStore {
   checkAuth: () => Promise<void>;
   login: (data: TLoginForm) => Promise<void>;
   signUp: (data: TRegisterForm) => Promise<boolean>;
-  verifyOtp: (email: string, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateProfile: (data: {
     displayName?: string;
@@ -59,7 +58,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const { data: res } = await axiosInstance.post("/auth/register", data);
       if (res.success) {
-        toast.success(res.message || "OTP sent!");
+        toast.success(res.message || "Registration successful!");
+        await get().checkAuth();
         return true;
       }
       toast.error(res.message || "Failed");
@@ -70,25 +70,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       return false;
     } finally {
       set({ isSigningUp: false });
-    }
-  },
-
-  verifyOtp: async (email, otp) => {
-    try {
-      const { data } = await axiosInstance.post("/auth/verifyOtp", {
-        email,
-        otp,
-      });
-      if (data.success) {
-        toast.success("Account verified!");
-        await get().checkAuth();
-        return true;
-      }
-      toast.error(data.message || "Invalid OTP");
-      return false;
-    } catch {
-      toast.error("Verification failed");
-      return false;
     }
   },
 
@@ -132,7 +113,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({
           authUser: {
             ...get().authUser!,
-            ...res.data.user, // backend returns the updated user object
+            ...res.data.user,
           },
         });
 

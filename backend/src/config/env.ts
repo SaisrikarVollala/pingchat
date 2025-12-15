@@ -29,13 +29,12 @@ const envSchema = z.object({
   CLIENT_URL: z
     .url({ message: "CLIENT_URL must be a valid URL" })
     .min(1, { message: "CLIENT_URL is required" }),
-  RESEND_API_KEY: z.string().min(1, { message: "RESEND_API_KEY is required" }),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  console.error("Invalid environment variables:", parsedEnv.error.format());
+  console.error("Invalid environment variables:", z.treeifyError(parsedEnv.error));
   process.exit(1);
 }
 
