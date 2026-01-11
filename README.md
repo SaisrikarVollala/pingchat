@@ -2,8 +2,12 @@
 
 A modern, real-time chat application built with the MERN stack (MongoDB, Express, React, Node.js) featuring WebSocket-based instant messaging, user authentication, and a beautiful UI.
 
+https://github.com/user-attachments/assets/d165da33-555e-43f9-9e6d-9501e19d588a
 
-https://github.com/user-attachments/assets/a977944d-080b-46a0-bdb2-0f7da2b883b6
+
+
+
+
 ![WhatsApp Image 2026-01-12 at 1 03 53 AM](https://github.com/user-attachments/assets/6323eff3-ba33-484a-ab8f-52079ceb2638)
 
 
