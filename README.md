@@ -14,7 +14,7 @@ https://github.com/user-attachments/assets/d165da33-555e-43f9-9e6d-9501e19d588a
 
 
 
-## ✨ Features
+##  Features
 
 - **Real-time Messaging**: Instant message delivery using Socket.IO
 - **User Authentication**: Secure JWT-based authentication with HTTP-only cookies
@@ -27,7 +27,7 @@ https://github.com/user-attachments/assets/d165da33-555e-43f9-9e6d-9501e19d588a
 - **Redis Caching**: Efficient caching for online users and unread counts
 - **Type Safety**: Full TypeScript support on both frontend and backend
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React 19** - UI library
@@ -55,7 +55,7 @@ https://github.com/user-attachments/assets/d165da33-555e-43f9-9e6d-9501e19d588a
 - **Cloudinary** - Image storage
 - **Zod** - Schema validation
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have the following installed:
 - Node.js (v20.19.0 or higher)
@@ -63,7 +63,7 @@ Before you begin, ensure you have the following installed:
 - Redis (local or cloud instance)
 - Cloudinary account (for image uploads)
 
-## 🛠️ Installation
+##  Installation
 
 ### 1. Clone the repository
 ```bash
@@ -118,7 +118,7 @@ Create a `.env` file in the `client` directory:
 VITE_API_URL=http://localhost:5000
 ```
 
-## 🚀 Running the Application
+## Running the Application
 
 ### Development Mode
 
@@ -206,7 +206,7 @@ pingchat/
 - Unread counts cached per user-chat combination
 - Reduces database queries for frequently accessed data
 
-## 🎨 UI Components
+## UI Components
 
 - **Sidebar**: Chat list with search functionality
 - **ChatContainer**: Message display and input
@@ -214,7 +214,7 @@ pingchat/
 - **SearchContainer**: User search interface
 - **ProfilePage**: User profile management
 
-## 🔒 Security Features
+## Security Features
 
 - HTTP-only cookies for JWT storage
 - CORS configuration
