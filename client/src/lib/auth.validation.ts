@@ -21,7 +21,7 @@ export const CheckAuthResponseSchema = z.object({
   username: z.string(),
   displayName: z.string(),
   email: z.email(),
-  avatar: z.string(),
+  avatarUrl: z.string().optional(),
 });
 
 export type TAuth = z.infer<typeof CheckAuthResponseSchema>;

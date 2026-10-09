@@ -1,22 +1,36 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model, Types, InferSchemaType } from "mongoose";
 
-interface IChat  {
-  type: "direct" | "group";
-  participants: Types.ObjectId[];        
-  lastMessage?: Types.ObjectId; 
-  createdAt?: Date;
-  updatedAt?: Date;
-}
 
-const ChatSchema = new Schema<IChat>(
+
+const chatSchema = new Schema(
   {
     type: { type: String, enum: ["direct", "group"], required: true },
-    participants: [{ type: Schema.Types.ObjectId, required: true,ref: 'User' }], 
-    lastMessage: { type: Schema.Types.ObjectId, ref: "Message" },
+    directKey: { type: String },//for identifying direct chat
+    name: { type: String },
+    avatarUrl: { type: String },
+    createdBy: { type: Types.ObjectId, ref: "User", required: true },
+    memberCount: { type: Number, default: 0 },
+    lastMessage: {
+      messageId: Types.ObjectId,
+      senderId: Types.ObjectId,
+      type: String,
+      body: String,
+      sequenceNumber: Number,
+      createdAt: Date,
+    },
+    lastSequenceNumber:{type:Number,required:true,default:0},
   },
   { timestamps: true }
 );
 
-ChatSchema.index({ participants: 1 });
 
-export const Chat = model<IChat>("Chat", ChatSchema);
+chatSchema.index(
+  { directKey: 1 },
+  { unique: true, partialFilterExpression: { type: "direct" } },
+);
+
+export const buildDirectKey = (a: string, b: string) =>
+  a < b ? `${a}:${b}` : `${b}:${a}`;
+
+export type ChatDoc=InferSchemaType<typeof chatSchema>
+export const Chat = model("Chat", chatSchema);

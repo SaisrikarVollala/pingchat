@@ -3,8 +3,8 @@ import { Chat } from "../model/chats.model";
 import { Message } from "../model/message.model";
 import { Request, Response } from "express";
 import { User } from "../model/user.model";
-import { authenticateToken } from "../middleware/auth.middleware";
-const router = express.Router();
+
+
 import {
   getCachedUnreadCount,
   cacheUnreadCount,

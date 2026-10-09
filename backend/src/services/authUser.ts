@@ -1,29 +1,31 @@
 import jwt from "jsonwebtoken";
 import { Env } from "../config/env";
-import { TAuth,AuthPayloadSchema } from "../validation/auth.validation";
+import { AuthToken, AuthTokenSchema } from "../validation/auth.validation";
 
-export const generateToken = (payload: TAuth): string => {
-  const tokenData = {
-    _id: payload._id,
-    username: payload.username,
-    displayName: payload.displayName,
-    avatar: payload.avatar,
-    email: payload.email,
+
+export const generateToken = (payload: AuthToken): string => {
+  // Validate payload at runtime
+  const validated = AuthTokenSchema.parse(payload);
+  const token = {
+    _id: validated._id,
+    username: validated.username,
+    displayName: validated.displayName,
+    avatarUrl: validated.avatarUrl,
+    email: validated.email,
   };
-
-  return jwt.sign(tokenData, Env.JWT_SECRET, {
+  return jwt.sign(token, Env.JWT_SECRET, {
     expiresIn: "7d",
     issuer: "PingChat",
   });
 };
 
 
-export const verifyToken = (token: string): TAuth => {
+export const verifyToken = (token: string): AuthToken => {
   const decoded = jwt.verify(token, Env.JWT_SECRET);
-  
+
   if (typeof decoded !== "object" || decoded === null) {
     throw new Error("Invalid token payload");
   }
 
-  return AuthPayloadSchema.parse(decoded);
+  return AuthTokenSchema.parse(decoded);
 };

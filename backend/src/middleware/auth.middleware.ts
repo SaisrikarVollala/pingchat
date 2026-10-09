@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../model/user.model";
 import { verifyToken } from "../services/authUser"; 
-import { ZodError } from "zod";
 
 export const authenticateToken = async (
   req: Request,
@@ -45,14 +44,6 @@ export const authenticateToken = async (
       return res.status(401).json({
         success: false,
         message: "Unauthorized Access: Invalid token",
-      });
-    }
-
-    if (error instanceof ZodError) {
-      console.error("hello")
-      return res.status(401).json({
-        success: false,
-        error: error.issues.map((e) => e.message),
       });
     }
 
